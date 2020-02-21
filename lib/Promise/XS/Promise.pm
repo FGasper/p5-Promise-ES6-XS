@@ -30,29 +30,14 @@ these methods:
 
 … which behave as they normally do in promise implementations.
 
-=head1 NOTES
-
-Subclassing this class won’t work because the above-named methods always
-return instances of (exactly) this class. That may change eventually,
-but for now this is what’s what.
-
 =cut
 
 sub _warn_unhandled {
-    my ($promise_sv, @reasons) = @_;
+    my ($promise_sv, $reason) = @_;
 
-    if (1 == @reasons) {
-        warn "$promise_sv: Unhandled rejection: $reasons[0]\n";
-    }
-    else {
-        my $total = 0 + @reasons;
+    warn "$promise_sv: Unhandled rejection: $reason\n";
 
-        for my $i ( 0 .. $#reasons ) {
-            my $num = 1 + $i;
-
-            warn "$promise_sv: Unhandled rejection ($num of $total): $reasons[$i]\n";
-        }
-    }
+    return;
 }
 
 1;

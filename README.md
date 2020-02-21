@@ -46,8 +46,8 @@ subset of that from [Promises](https://metacpan.org/pod/Promises), is retained.
 
 # STATUS
 
-Breaking changes in this interface are unlikely; however, the implementation
-is relatively untested since the fork. Your mileage may vary.
+This module should be fairly stable but is still relatively untested since
+the fork from [AnyEvent::XSPromises](https://metacpan.org/pod/AnyEvent::XSPromises). Your mileage may vary.
 
 # DIFFERENCES FROM ECMASCRIPT PROMISES
 
@@ -73,19 +73,34 @@ call “array references”). So whereas in ECMAScript you do:
 See [Promise::ES6](https://metacpan.org/pod/Promise::ES6) for an interface that imitates ECMAScript promises
 more closely.
 
-# DIFFERENCES FROM [Promises](https://metacpan.org/pod/Promises) ET AL.
+# `finally()` AND OTHER PERL PROMISE LIBRARIES
 
-This module implements ECMAScript’s `finally()` interface, which differs
-from that in some other Perl promise implementations.
+This module prioritizes compatibility with the
+[Promises/A+ specification](https://promisesaplus.com/). That standard
+defines only part of this interface, though; specifically, Promises/A+
+omits any mention of `catch()` or `finally()`.
+
+These two functions are defined as part of ECMAScript. That standard defines
+`catch()` simply as “syntactic sugar” around `then()`. ECMAScript defines
+`finally()`, though, in [different terms](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally):
 
 Given the following …
 
     my $new = $p->finally( $callback )
 
-- `$callback` is given no arguments and is called in void context.
-- If `$callback` returns, `$new` has the same status as `$p`.
+- `$callback` is given no arguments, and its return is ignored.
 - If `$callback` throws, `$new` is rejected with `$callback`’s
-exception.
+exception; otherwise, `$new` has the same final state as `$p`.
+
+[Promise::ES6](https://metacpan.org/pod/Promise::ES6) and [Mojo::Promise](https://metacpan.org/pod/Mojo::Promise) implement the above behavior. As of
+version 0.08, this library does as well. (All of these also call $callback
+in void context.)
+
+[Promises](https://metacpan.org/pod/Promises) and [AnyEvent::XSPromises](https://metacpan.org/pod/AnyEvent::XSPromises) (as of this writing) implement it
+partly: in those libraries, `$callback`’s return is still ignored, but so is
+any exception that it may throw. `$callback` is also given the
+resolution/rejection values, despite that there’s no way to know whether
+those represent success or failure.
 
 # EVENT LOOPS
 

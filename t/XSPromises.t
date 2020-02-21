@@ -32,9 +32,8 @@ for (1..1) {
         $finally_called= 1;
         654;
     })->then(sub {
-        is($_[0], 123);
-        is($_[1], 456);
-        is(0 + @_, 2);
+        is($_[0], 456, 'success callback called in scalar context');
+        is(0 + @_, 1, 'single argument given to success callback');
         die "Does this work?";
     })->then(
         sub {

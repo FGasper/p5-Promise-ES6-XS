@@ -53,8 +53,8 @@ subset of that from L<Promises>, is retained.
 
 =head1 STATUS
 
-Breaking changes in this interface are unlikely; however, the implementation
-is relatively untested since the fork. Your mileage may vary.
+This module should be fairly stable but is still relatively untested since
+the fork from L<AnyEvent::XSPromises>. Your mileage may vary.
 
 =head1 DIFFERENCES FROM ECMASCRIPT PROMISES
 
@@ -86,10 +86,16 @@ call “array references”). So whereas in ECMAScript you do:
 See L<Promise::ES6> for an interface that imitates ECMAScript promises
 more closely.
 
-=head1 DIFFERENCES FROM L<Promises> ET AL.
+=head1 C<finally()> AND OTHER PERL PROMISE LIBRARIES
 
-This module implements ECMAScript’s C<finally()> interface, which differs
-from that in some other Perl promise implementations.
+This module prioritizes compatibility with the
+L<Promises/A+ specification|https://promisesaplus.com/>. That standard
+defines only part of this interface, though; specifically, Promises/A+
+omits any mention of C<catch()> or C<finally()>.
+
+These two functions are defined as part of ECMAScript. That standard defines
+C<catch()> simply as “syntactic sugar” around C<then()>. ECMAScript defines
+C<finally()>, though, in L<different terms|https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally>:
 
 Given the following …
 
@@ -97,14 +103,22 @@ Given the following …
 
 =over
 
-=item * C<$callback> is given no arguments and is called in void context.
-
-=item * If C<$callback> returns, C<$new> has the same status as C<$p>.
+=item * C<$callback> is given no arguments, and its return is ignored.
 
 =item * If C<$callback> throws, C<$new> is rejected with C<$callback>’s
-exception.
+exception; otherwise, C<$new> has the same final state as C<$p>.
 
 =back
+
+L<Promise::ES6> and L<Mojo::Promise> implement the above behavior. As of
+version 0.08, this library does as well. (All of these also call $callback
+in void context.)
+
+L<Promises> and L<AnyEvent::XSPromises> (as of this writing) implement it
+partly: in those libraries, C<$callback>’s return is still ignored, but so is
+any exception that it may throw. C<$callback> is also given the
+resolution/rejection values, despite that there’s no way to know whether
+those represent success or failure.
 
 =head1 EVENT LOOPS
 
@@ -206,6 +220,7 @@ sub use_event {
 }
 
 sub resolved {
+use Carp::Always;
     return deferred()->resolve(@_)->promise();
 }
 
@@ -237,10 +252,10 @@ sub all {
 
         $p->then(
             sub {
-                $values[$i]= \@_;
+                $values[$i]= $_[0];
                 if ((--$remaining) == 0) {
                     $pending= 0;
-                    $then_what->resolve(@values);
+                    $then_what->resolve(\@values);
                 }
             },
             $reject_now,

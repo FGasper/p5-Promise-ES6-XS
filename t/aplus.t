@@ -35,7 +35,7 @@ sub expect_reject {
 my %tests= (
     no_duplicate_invoke_callback => sub {
         my $all_good;
-        resolved->then(sub {
+        resolved(undef)->then(sub {
             fail if $all_good;
             $all_good= 1;
         }, sub {
@@ -46,7 +46,7 @@ my %tests= (
     },
     cannot_resolve_and_reject => sub {
         my $d= deferred;
-        $d->resolve;
+        $d->resolve(undef);
         eval { $d->reject; fail; };
         expect_resolve($d->promise);
     },
@@ -105,8 +105,8 @@ my %tests= (
     },
     pass_value_to_callback => sub {
         expect_resolve(
-            resolved(1, 2, 3, 4)->then(sub {
-                is_deeply(\@_, [1,2,3,4]);
+            resolved(4)->then(sub {
+                is_deeply(\@_, [4]);
             })
         );
     },
@@ -245,10 +245,10 @@ my %tests= (
             }),
             $r->then(sub {
                 is($_[0], 1);
-                resolved(8, 9);
+                resolved(8);
             })->then(sub {
                 is($_[0], 8);
-                is($_[1], 9);
+                is(0 + @_, 1);
             }),
             $r->then(sub {
                 rejected(1);
@@ -323,25 +323,25 @@ my %tests= (
     can_thenable_other => sub {
         my $d= MyBadCode->new;
         delayed(0.1, sub {
-            $d->resolve(5, 6);
+            $d->resolve(5);
         });
         resolved->then(sub {
             $d
         })->then(sub {
             is_deeply($_[0], 5);
-            is_deeply($_[1], 6);
+            is_deeply(0 + @_, 1, 'single arg given');
         });
     },
     can_thenable_other_reject => sub {
         my $d= MyBadCode->new;
         delayed(0.1, sub {
-            $d->reject(5, 6);
+            $d->reject(5);
         });
         resolved->then(sub {
             $d
         })->catch(sub {
             is_deeply($_[0], 5);
-            is_deeply($_[1], 6);
+            is( 0 + @_, 1 );
         });
     },
     can_handle_crazy_thenable => sub {

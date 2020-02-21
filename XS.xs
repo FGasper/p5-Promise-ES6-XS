@@ -64,8 +64,7 @@ struct xspr_callback_s {
 
 struct xspr_result_s {
     xspr_result_state_t state;
-    SV** results;
-    int count;
+    SV* result;
     int refs;
 };
 
@@ -102,12 +101,12 @@ void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t *result);
 void xspr_promise_incref(pTHX_ xspr_promise_t* promise);
 void xspr_promise_decref(pTHX_ xspr_promise_t* promise);
 
-xspr_result_t* xspr_result_new(pTHX_ xspr_result_state_t state, unsigned count);
+xspr_result_t* xspr_result_new(pTHX_ xspr_result_state_t state);
 xspr_result_t* xspr_result_from_error(pTHX_ const char *error);
 void xspr_result_incref(pTHX_ xspr_result_t* result);
 void xspr_result_decref(pTHX_ xspr_result_t* result);
 
-xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_count, bool is_finally);
+xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_count);
 xspr_promise_t* xspr_promise_from_sv(pTHX_ SV* input);
 
 
@@ -167,16 +166,15 @@ void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* orig
             xspr_result_t* result;
             result = xspr_invoke_perl(aTHX_
                                       callback_fn,
-                                      origin->finished.result->results,
-                                      origin->finished.result->count,
-                                      false
+                                      &(origin->finished.result->result),
+                                      1
                                       );
 
             if (callback->perl.next != NULL) {
                 int skip_passthrough = 0;
 
-                if (result->count == 1 && result->state == XSPR_RESULT_RESOLVED) {
-                    xspr_promise_t* promise = xspr_promise_from_sv(aTHX_ result->results[0]);
+                if (result->state == XSPR_RESULT_RESOLVED) {
+                    xspr_promise_t* promise = xspr_promise_from_sv(aTHX_ result->result);
                     if (promise != NULL) {
                         if ( promise == callback->perl.next) {
                             /* This is an extreme corner case the A+ spec made us implement: we need to reject
@@ -216,8 +214,7 @@ void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* orig
         if (callback_fn != NULL) {
             xspr_result_t* result = xspr_invoke_perl( aTHX_
                 callback_fn,
-                NULL, 0,
-                true
+                NULL, 0
             );
 
             if (result->state == XSPR_RESULT_REJECTED) {
@@ -404,7 +401,7 @@ void xspr_queue_maybe_schedule(pTHX)
 }
 
 /* Invoke the user's perl code. We need to be really sure this doesn't return early via croak/next/etc. */
-xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_count, bool is_finally)
+xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_count)
 {
     dSP;
     unsigned count, i;
@@ -429,18 +426,16 @@ xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_c
     SAVE_DEFSV;
     DEFSV_set(sv_newmortal());
 
-    count = call_sv(perl_fn, G_EVAL | (is_finally ? G_VOID | G_DISCARD : G_ARRAY));
+    count = call_sv(perl_fn, G_EVAL | G_SCALAR);
 
     SPAGAIN;
 
     if (SvTRUE(ERRSV)) {
-        result = xspr_result_new(aTHX_ XSPR_RESULT_REJECTED, 1);
-        result->results[0] = newSVsv(ERRSV);
+        result = xspr_result_new(aTHX_ XSPR_RESULT_REJECTED);
+        result->result = newSVsv(ERRSV);
     } else {
-        result = xspr_result_new(aTHX_ XSPR_RESULT_RESOLVED, count);
-        for (i = 0; i < count; i++) {
-            result->results[count-i-1] = SvREFCNT_inc(POPs);
-        }
+        result = xspr_result_new(aTHX_ XSPR_RESULT_RESOLVED);
+        result->result = SvREFCNT_inc(POPs);
     }
     PUTBACK;
 
@@ -460,11 +455,7 @@ void xspr_result_incref(pTHX_ xspr_result_t* result)
 void xspr_result_decref(pTHX_ xspr_result_t* result)
 {
     if (--(result->refs) == 0) {
-        unsigned i;
-        for (i = 0; i < result->count; i++) {
-            SvREFCNT_dec(result->results[i]);
-        }
-        Safefree(result->results);
+        SvREFCNT_dec(result->result);
         Safefree(result);
     }
 }
@@ -512,21 +503,19 @@ void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
 }
 
 /* Create a new xspr_result_t object with the given number of item slots */
-xspr_result_t* xspr_result_new(pTHX_ xspr_result_state_t state, unsigned count)
+xspr_result_t* xspr_result_new(pTHX_ xspr_result_state_t state)
 {
     xspr_result_t* result;
     Newxz(result, 1, xspr_result_t);
-    Newxz(result->results, count, SV*);
     result->state = state;
     result->refs = 1;
-    result->count = count;
     return result;
 }
 
 xspr_result_t* xspr_result_from_error(pTHX_ const char *error)
 {
-    xspr_result_t* result = xspr_result_new(aTHX_ XSPR_RESULT_REJECTED, 1);
-    result->results[0] = newSVpv(error, 0);
+    xspr_result_t* result = xspr_result_new(aTHX_ XSPR_RESULT_REJECTED);
+    result->result = newSVpv(error, 0);
     return result;
 }
 
@@ -654,14 +643,12 @@ xspr_promise_t* xspr_promise_from_sv(pTHX_ SV* input)
     if (method_gv != NULL && isGV(method_gv) && GvCV(method_gv) != NULL) {
         dMY_CXT;
 
-        xspr_result_t* new_result = xspr_invoke_perl(aTHX_ MY_CXT.conversion_helper, &input, 1, false);
+        xspr_result_t* new_result = xspr_invoke_perl(aTHX_ MY_CXT.conversion_helper, &input, 1);
         if (new_result->state == XSPR_RESULT_RESOLVED &&
-            new_result->results != NULL &&
-            new_result->count == 1 &&
-            SvROK(new_result->results[0]) &&
-            sv_derived_from(new_result->results[0], PROMISE_CLASS)) {
+            SvROK(new_result->result) &&
+            sv_derived_from(new_result->result, PROMISE_CLASS)) {
             /* This is expected: our conversion function returned us one of our own promises */
-            IV tmp = SvIV((SV*)SvRV(new_result->results[0]));
+            IV tmp = SvIV((SV*)SvRV(new_result->result));
             PROMISE_CLASS_TYPE* new_promise = INT2PTR(PROMISE_CLASS_TYPE*, tmp);
 
             xspr_promise_t* promise = new_promise->promise;
@@ -911,7 +898,7 @@ promise(SV* self_sv)
         RETVAL
 
 SV*
-resolve(SV *self_sv, ...)
+resolve(SV *self_sv, SV *value = NULL)
     CODE:
         DEFERRED_CLASS_TYPE* self = _get_deferred_from_sv(aTHX_ self_sv);
 
@@ -919,11 +906,10 @@ resolve(SV *self_sv, ...)
             croak("Cannot resolve deferred: not pending");
         }
 
-        xspr_result_t* result = xspr_result_new(aTHX_ XSPR_RESULT_RESOLVED, items-1);
-        unsigned i;
-        for (i = 0; i < items-1; i++) {
-            result->results[i] = newSVsv(ST(1+i));
-        }
+        if (value == NULL) value = &PL_sv_undef;
+
+        xspr_result_t* result = xspr_result_new(aTHX_ XSPR_RESULT_RESOLVED);
+        result->result = newSVsv(value);
 
         xspr_promise_finish(aTHX_ self->promise, result);
         xspr_result_decref(aTHX_ result);
@@ -939,7 +925,7 @@ resolve(SV *self_sv, ...)
         RETVAL
 
 SV*
-reject(SV *self_sv, ...)
+reject(SV *self_sv, SV *value = NULL)
     CODE:
         DEFERRED_CLASS_TYPE* self = _get_deferred_from_sv(aTHX_ self_sv);
 
@@ -947,11 +933,10 @@ reject(SV *self_sv, ...)
             croak("Cannot reject deferred: not pending");
         }
 
-        xspr_result_t* result = xspr_result_new(aTHX_ XSPR_RESULT_REJECTED, items-1);
-        unsigned i;
-        for (i = 0; i < items-1; i++) {
-            result->results[i] = newSVsv(ST(1+i));
-        }
+        if (value == NULL) value = &PL_sv_undef;
+
+        xspr_result_t* result = xspr_result_new(aTHX_ XSPR_RESULT_REJECTED);
+        result->result = newSVsv(value);
 
         xspr_promise_finish(aTHX_ self->promise, result);
         xspr_result_decref(aTHX_ result);
@@ -1008,20 +993,14 @@ MODULE = Promise::XS     PACKAGE = Promise::XS::Promise
 PROTOTYPES: DISABLE
 
 void
-then(SV* self_sv, ...)
+then(SV* self_sv, SV* on_resolve = NULL, SV* on_reject = NULL)
     PPCODE:
         PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
 
-        SV* on_resolve;
-        SV* on_reject;
         xspr_promise_t* next;
 
-        if (items > 3) {
-            croak_xs_usage(cv, "self, on_resolve, on_reject");
-        }
-
-        on_resolve = (items > 1) ? ST(1) : &PL_sv_undef;
-        on_reject  = (items > 2) ? ST(2) : &PL_sv_undef;
+        if (on_resolve == NULL) on_resolve = &PL_sv_undef;
+        if (on_reject == NULL) on_reject = &PL_sv_undef;
 
         next = create_next_promise_if_needed(aTHX_ self_sv, &ST(0));
 
@@ -1062,15 +1041,9 @@ DESTROY(SV* self_sv)
         if (self->promise->unhandled_rejection) {
             xspr_result_t* rejection = self->promise->unhandled_rejection;
 
-            SV* warn_args[1 + rejection->count];
-            warn_args[0] = self_sv;
+            SV* warn_args[] = { self_sv, rejection->result };
 
-            unsigned i;
-            for (i=0; i<rejection->count; i++) {
-                warn_args[1 + i] = rejection->results[i];
-            }
-
-            _call_pv_with_args(aTHX_ "Promise::XS::Promise::_warn_unhandled", warn_args, 1 + rejection->count);
+            _call_pv_with_args(aTHX_ "Promise::XS::Promise::_warn_unhandled", warn_args, 2);
         }
 
         _warn_on_destroy_if_needed(aTHX_ self->promise, self_sv);

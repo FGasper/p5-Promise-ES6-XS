@@ -1,13 +1,18 @@
 Revision history for Perl extension Promise::XS:
 
 0.08
-- BREAKING CHANGE: finally() now implements ECMAScript’s interface. Toward that
-  end, finally() callbacks no longer receive arguments and run in void context.
-  Also, any exception thrown in a finally() callback becomes the finally()
-  exception’s rejection value. Previously callbacks received the resolution
-  or rejection values and ran in list context, and a thrown exception was
-  discarded. This is a divergence from preexisting Promise libraries in favor
-  of the broader standard.
+- MAJOR BREAKING CHANGE: Callbacks now run in scalar context. The prior
+  behavior of running in list context allowed for weirdness like
+  returning a promise plus additional items, in whatever order, which
+  allows for subtle bugs. Scalar context conduces to more robust usage
+  and hews closer to the popular ECMAScript pattern.
+- MAJOR BREAKING CHANGE: Due to the above change, all()/collect() now
+  resolves with a (scalar) array reference of the promise returns.
+- BREAKING CHANGE (minor): finally() now mimics ECMAScript’s interface.
+  That means:
+    * Callbacks now receive no arguments.
+    * Returned promises resolve with the original value if the callback
+      returns anything but a promise that rejects.
 
 0.07 Tue 11 Feb 2020
 - Support old event loop versions that lack zero-timer methods.
