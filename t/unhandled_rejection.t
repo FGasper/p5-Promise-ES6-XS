@@ -37,7 +37,7 @@ use Promise::XS;
     cmp_deeply(
         \@w,
         [ re( qr<nonono> ) ],
-        'die() in then() triggers warning when promise is already GCed',
+        'die() in then() triggers warning even promise itself is GCed',
     );
 }
 

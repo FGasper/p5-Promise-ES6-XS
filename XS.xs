@@ -64,7 +64,6 @@ struct xspr_callback_s {
 
 struct xspr_result_s {
     xspr_result_state_t state;
-    bool rejection_handled;
     SV* result;
     int refs;
 };
@@ -72,7 +71,7 @@ struct xspr_result_s {
 struct xspr_promise_s {
     xspr_promise_state_t state;
     pid_t detect_leak_pid;
-    // xspr_result_t* unhandled_rejection;
+    xspr_result_t* unhandled_rejection;
     int refs;
     union {
         struct {
@@ -107,7 +106,7 @@ xspr_result_t* xspr_result_from_error(pTHX_ const char *error);
 void xspr_result_incref(pTHX_ xspr_result_t* result);
 void xspr_result_decref(pTHX_ xspr_result_t* result);
 
-xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV* input);
+xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_count);
 xspr_promise_t* xspr_promise_from_sv(pTHX_ SV* input);
 
 
@@ -137,46 +136,6 @@ typedef struct {
 
 START_MY_CXT
 
-void _call_pv_with_args( pTHX_ const char* subname, SV** args, unsigned argscount )
-{
-    // --- Almost all copy-paste from “perlcall” … blegh!
-    dSP;
-
-    ENTER;
-    SAVETMPS;
-
-    PUSHMARK(SP);
-    EXTEND(SP, argscount);
-
-    unsigned i;
-    for (i=0; i<argscount; i++) {
-        PUSHs(args[i]);
-    }
-
-    PUTBACK;
-
-    call_pv(subname, G_VOID);
-
-    FREETMPS;
-    LEAVE;
-
-    return;
-}
-
-static inline void _warn_on_destroy_if_needed(pTHX_ xspr_promise_t* promise, SV* self_sv) {
-    if (promise->detect_leak_pid && PXS_IS_GLOBAL_DESTRUCTION && promise->detect_leak_pid == getpid()) {
-        warn( "======================================================================\nXXXXXX - %s survived until global destruction; memory leak likely!\n======================================================================\n", SvPV_nolen(self_sv) );
-    }
-}
-
-static inline void _warn_on_unhandled_rejection_if_needed(pTHX_ xspr_result_t* result) {
-    if (result->state == XSPR_RESULT_REJECTED && !result->rejection_handled) {
-        SV* warn_args[] = { result->result };
-
-        _call_pv_with_args(aTHX_ "Promise::XS::Promise::_warn_unhandled", warn_args, 1);
-    }
-}
-
 /* Process a single callback */
 void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* origin)
 {
@@ -197,8 +156,7 @@ void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* orig
             // Even if not, though, we’re creating another promise, and that
             // promise will either handle the rejection or report non-handling.
             // So, in either case, we want to clear the unhandled rejection.
-            // origin->unhandled_rejection = NULL;
-            origin->finished.result->rejection_handled = true;
+            origin->unhandled_rejection = NULL;
         } else {
             callback_fn = NULL; /* Be quiet, bad compiler! */
             assert(0);
@@ -208,15 +166,14 @@ void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* orig
             xspr_result_t* result;
             result = xspr_invoke_perl(aTHX_
                                       callback_fn,
-                                      origin->finished.result->result
+                                      &(origin->finished.result->result),
+                                      1
                                       );
 
             if (callback->perl.next != NULL) {
-                int callback_returned_promise = 0;
+                int skip_passthrough = 0;
 
                 if (result->state == XSPR_RESULT_RESOLVED) {
-                    /* We gave a value to a callback which returned. */
-
                     xspr_promise_t* promise = xspr_promise_from_sv(aTHX_ result->result);
                     if (promise != NULL) {
                         if ( promise == callback->perl.next) {
@@ -231,15 +188,15 @@ void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* orig
                             /* Fairly normal case: we returned a promise from the callback */
                             xspr_callback_t* chainback = xspr_callback_new_chain(aTHX_ callback->perl.next);
                             xspr_promise_then(aTHX_ promise, chainback);
-                            // promise->unhandled_rejection = NULL;
+                            promise->unhandled_rejection = NULL;
                         }
 
                         xspr_promise_decref(aTHX_ promise);
-                        callback_returned_promise = 1;
+                        skip_passthrough = 1;
                     }
                 }
 
-                if (!callback_returned_promise) {
+                if (!skip_passthrough) {
                     xspr_promise_finish(aTHX_ callback->perl.next, result);
                 }
             }
@@ -257,7 +214,7 @@ void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* orig
         if (callback_fn != NULL) {
             xspr_result_t* result = xspr_invoke_perl( aTHX_
                 callback_fn,
-                NULL
+                NULL, 0
             );
 
             if (result->state == XSPR_RESULT_REJECTED) {
@@ -393,6 +350,32 @@ void _call_with_1_or_2_args( pTHX_ SV* cb, SV* maybe_arg0, SV* arg1 ) {
     return;
 }
 
+void _call_pv_with_args( pTHX_ const char* subname, SV** args, unsigned argscount )
+{
+    // --- Almost all copy-paste from “perlcall” … blegh!
+    dSP;
+
+    ENTER;
+    SAVETMPS;
+
+    PUSHMARK(SP);
+    EXTEND(SP, argscount);
+
+    unsigned i;
+    for (i=0; i<argscount; i++) {
+        PUSHs(args[i]);
+    }
+
+    PUTBACK;
+
+    call_pv(subname, G_VOID);
+
+    FREETMPS;
+    LEAVE;
+
+    return;
+}
+
 void xspr_queue_maybe_schedule(pTHX)
 {
     dMY_CXT;
@@ -418,7 +401,7 @@ void xspr_queue_maybe_schedule(pTHX)
 }
 
 /* Invoke the user's perl code. We need to be really sure this doesn't return early via croak/next/etc. */
-xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV* input)
+xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_count)
 {
     dSP;
     unsigned count, i;
@@ -433,25 +416,23 @@ xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV* input)
     SAVETMPS;
 
     PUSHMARK(SP);
-
-    if (input != NULL) {
-        EXTEND(SP, input ? 1 : 0);
-        PUSHs(input);
-        PUTBACK;
+    EXTEND(SP, input_count);
+    for (i = 0; i < input_count; i++) {
+        PUSHs(inputs[i]);
     }
+    PUTBACK;
 
     /* Clear $_ so that callbacks don't end up talking to each other by accident */
     SAVE_DEFSV;
     DEFSV_set(sv_newmortal());
 
-    count = call_sv(perl_fn, G_EVAL | G_SCALAR | (input ? 0 : G_NOARGS));
+    count = call_sv(perl_fn, G_EVAL | G_SCALAR);
 
     SPAGAIN;
 
     if (SvTRUE(ERRSV)) {
         result = xspr_result_new(aTHX_ XSPR_RESULT_REJECTED);
         result->result = newSVsv(ERRSV);
-        result->rejection_handled = false;
     } else {
         result = xspr_result_new(aTHX_ XSPR_RESULT_RESOLVED);
         result->result = SvREFCNT_inc(POPs);
@@ -474,8 +455,6 @@ void xspr_result_incref(pTHX_ xspr_result_t* result)
 void xspr_result_decref(pTHX_ xspr_result_t* result)
 {
     if (--(result->refs) == 0) {
-        _warn_on_unhandled_rejection_if_needed(aTHX_ result);
-
         SvREFCNT_dec(result->result);
         Safefree(result);
     }
@@ -499,7 +478,7 @@ void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
     int count = promise->pending.callbacks_count;
 
     if (count == 0 && result->state == XSPR_RESULT_REJECTED) {
-        // promise->unhandled_rejection = result;
+        promise->unhandled_rejection = result;
     }
 
     promise->state = XSPR_STATE_FINISHED;
@@ -578,7 +557,7 @@ xspr_promise_t* xspr_promise_new(pTHX)
     Newxz(promise, 1, xspr_promise_t);
     promise->refs = 1;
     promise->state = XSPR_STATE_PENDING;
-    // promise->unhandled_rejection = NULL;
+    promise->unhandled_rejection = NULL;
     return promise;
 }
 
@@ -664,7 +643,7 @@ xspr_promise_t* xspr_promise_from_sv(pTHX_ SV* input)
     if (method_gv != NULL && isGV(method_gv) && GvCV(method_gv) != NULL) {
         dMY_CXT;
 
-        xspr_result_t* new_result = xspr_invoke_perl(aTHX_ MY_CXT.conversion_helper, input);
+        xspr_result_t* new_result = xspr_invoke_perl(aTHX_ MY_CXT.conversion_helper, &input, 1);
         if (new_result->state == XSPR_RESULT_RESOLVED &&
             SvROK(new_result->result) &&
             sv_derived_from(new_result->result, PROMISE_CLASS)) {
@@ -679,8 +658,6 @@ xspr_promise_t* xspr_promise_from_sv(pTHX_ SV* input)
             return promise;
 
         } else {
-            /* Our conversion function threw an error. */
-
             xspr_promise_t* promise = xspr_promise_new(aTHX);
             xspr_promise_finish(aTHX_ promise, new_result);
             xspr_result_decref(aTHX_ new_result);
@@ -741,6 +718,12 @@ static inline xspr_promise_t* create_next_promise_if_needed(pTHX_ SV* original, 
     }
 
     return NULL;
+}
+
+static inline void _warn_on_destroy_if_needed(pTHX_ xspr_promise_t* promise, SV* self_sv) {
+    if (promise->detect_leak_pid && PXS_IS_GLOBAL_DESTRUCTION && promise->detect_leak_pid == getpid()) {
+        warn( "======================================================================\nXXXXXX - %s survived until global destruction; memory leak likely!\n======================================================================\n", SvPV_nolen(self_sv) );
+    }
 }
 
 //----------------------------------------------------------------------
@@ -972,7 +955,7 @@ SV*
 clear_unhandled_rejection(SV *self_sv)
     CODE:
         DEFERRED_CLASS_TYPE* self = _get_deferred_from_sv(aTHX_ self_sv);
-        // self->promise->unhandled_rejection = NULL;
+        self->promise->unhandled_rejection = NULL;
 
         if (GIMME_V == G_VOID) {
             RETVAL = NULL;
@@ -1055,7 +1038,6 @@ DESTROY(SV* self_sv)
     CODE:
         PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
 
-        /*
         if (self->promise->unhandled_rejection) {
             xspr_result_t* rejection = self->promise->unhandled_rejection;
 
@@ -1063,7 +1045,6 @@ DESTROY(SV* self_sv)
 
             _call_pv_with_args(aTHX_ "Promise::XS::Promise::_warn_unhandled", warn_args, 2);
         }
-        */
 
         _warn_on_destroy_if_needed(aTHX_ self->promise, self_sv);
 

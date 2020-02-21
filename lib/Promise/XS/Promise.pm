@@ -33,9 +33,9 @@ these methods:
 =cut
 
 sub _warn_unhandled {
-    my ($reason) = @_;
+    my ($promise_sv, $reason) = @_;
 
-    warn __PACKAGE__ . ": Unhandled rejection: $reason\n";
+    warn "$promise_sv: Unhandled rejection: $reason\n";
 
     return;
 }
