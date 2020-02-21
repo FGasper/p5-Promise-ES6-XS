@@ -33,9 +33,11 @@ these methods:
 =cut
 
 sub _warn_unhandled {
-    my ($promise_sv, $reason) = @_;
+    my ($reason) = @_;
 
-    warn "$promise_sv: Unhandled rejection: $reason\n";
+    # For now it’s fine that we don’t use the “real” class of a
+    # potentially subclassed promise.
+    warn __PACKAGE__ . ": Unhandled rejection: $reason\n";
 
     return;
 }

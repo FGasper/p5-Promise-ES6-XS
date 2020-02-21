@@ -136,6 +136,38 @@ typedef struct {
 
 START_MY_CXT
 
+void _call_pv_with_args( pTHX_ const char* subname, SV** args, unsigned argscount )
+{
+    // --- Almost all copy-paste from “perlcall” … blegh!
+    dSP;
+
+    ENTER;
+    SAVETMPS;
+
+    PUSHMARK(SP);
+    EXTEND(SP, argscount);
+
+    unsigned i;
+    for (i=0; i<argscount; i++) {
+        PUSHs(args[i]);
+    }
+
+    PUTBACK;
+
+    call_pv(subname, G_VOID);
+
+    FREETMPS;
+    LEAVE;
+
+    return;
+}
+
+static inline void _warn_unhandled_rejection(pTHX_ SV* reason) {
+    SV* warn_args[] = { reason };
+
+    _call_pv_with_args(aTHX_ "Promise::XS::Promise::_warn_unhandled", warn_args, 1);
+}
+
 /* Process a single callback */
 void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* origin)
 {
@@ -170,7 +202,16 @@ void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* orig
                                       1
                                       );
 
-            if (callback->perl.next != NULL) {
+            if (callback->perl.next == NULL) {
+
+                // We’re here because an exception was thrown in a callback
+                // that has no “next” promise. By definition that’s an
+                // unhandled rejection.
+                if (result->state == XSPR_RESULT_REJECTED) {
+                    _warn_unhandled_rejection(aTHX_ result->result);
+                }
+            }
+            else {
                 int skip_passthrough = 0;
 
                 if (result->state == XSPR_RESULT_RESOLVED) {
@@ -350,32 +391,6 @@ void _call_with_1_or_2_args( pTHX_ SV* cb, SV* maybe_arg0, SV* arg1 ) {
     return;
 }
 
-void _call_pv_with_args( pTHX_ const char* subname, SV** args, unsigned argscount )
-{
-    // --- Almost all copy-paste from “perlcall” … blegh!
-    dSP;
-
-    ENTER;
-    SAVETMPS;
-
-    PUSHMARK(SP);
-    EXTEND(SP, argscount);
-
-    unsigned i;
-    for (i=0; i<argscount; i++) {
-        PUSHs(args[i]);
-    }
-
-    PUTBACK;
-
-    call_pv(subname, G_VOID);
-
-    FREETMPS;
-    LEAVE;
-
-    return;
-}
-
 void xspr_queue_maybe_schedule(pTHX)
 {
     dMY_CXT;
@@ -540,6 +555,10 @@ void xspr_promise_decref(pTHX_ xspr_promise_t *promise)
             Safefree(callbacks);
 
         } else if (promise->state == XSPR_STATE_FINISHED) {
+            if (promise->unhandled_rejection) {
+                _warn_unhandled_rejection(aTHX_ promise->unhandled_rejection->result);
+            }
+
             xspr_result_decref(aTHX_ promise->finished.result);
 
         } else {
@@ -1037,14 +1056,6 @@ void
 DESTROY(SV* self_sv)
     CODE:
         PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
-
-        if (self->promise->unhandled_rejection) {
-            xspr_result_t* rejection = self->promise->unhandled_rejection;
-
-            SV* warn_args[] = { self_sv, rejection->result };
-
-            _call_pv_with_args(aTHX_ "Promise::XS::Promise::_warn_unhandled", warn_args, 2);
-        }
 
         _warn_on_destroy_if_needed(aTHX_ self->promise, self_sv);
 

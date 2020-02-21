@@ -29,7 +29,9 @@ use Promise::XS;
 
         my $p = $d->promise();
 
-        $p->then( sub { die "nonono" } );
+        $p->then( sub {
+            die "nonono";
+        } );
 
         $d->resolve(234);
     }
@@ -38,6 +40,29 @@ use Promise::XS;
         \@w,
         [ re( qr<nonono> ) ],
         'die() in then() triggers warning even promise itself is GCed',
+    );
+}
+
+{
+    my @w;
+    local $SIG{'__WARN__'} = sub { push @w, @_ };
+
+    {
+        my $d = Promise::XS::deferred();
+
+        my $p = $d->promise();
+
+        $p->then( sub {
+            return Promise::XS::rejected(666);
+        } );
+
+        $d->resolve(234);
+    }
+
+    cmp_deeply(
+        \@w,
+        [ re( qr<666> ) ],
+        'return rejected in then() triggers warning even promise itself is GCed',
     );
 }
 
