@@ -20,6 +20,27 @@ use Promise::XS;
     $d->reject("nonono");
 }
 
+{
+    my @w;
+    local $SIG{'__WARN__'} = sub { push @w, @_ };
+
+    {
+        my $d = Promise::XS::deferred();
+
+        my $p = $d->promise();
+
+        $p->then( sub { die "nonono" } );
+
+        $d->resolve(234);
+    }
+
+    cmp_deeply(
+        \@w,
+        [ re( qr<nonono> ) ],
+        'die() in then() triggers warning even promise itself is GCed',
+    );
+}
+
 # should warn because finally() rejects
 {
     my @w;
@@ -129,6 +150,8 @@ use Promise::XS;
 
     is_deeply $got, 'ForeignRejectedPromise', 'got expected from foreign rejected';
 }
+
+#----------------------------------------------------------------------
 
 done_testing();
 
