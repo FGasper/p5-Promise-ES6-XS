@@ -164,19 +164,9 @@ use Promise::XS;
 
         my $p = $d->promise();
 
-        diag "created p1";
-
-        my $f = $p->finally( sub { } );
-
-        diag "created finally";
-
-        $f = $f->catch( sub { } );
-
-        diag "created catch, reaped finally";
+        my $f = $p->finally( sub { } )->catch( sub { } );
 
         $p->catch( sub { } );
-
-        diag "created & reaped 2nd catch";
 
         $d->reject("awful");
     }

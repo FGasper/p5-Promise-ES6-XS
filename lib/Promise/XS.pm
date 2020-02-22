@@ -53,7 +53,9 @@ L<AnyEvent::XSPromises>, with some significant interface changes.
 =head1 STATUS
 
 This module should be fairly stable but is still relatively untested since
-the fork from L<AnyEvent::XSPromises>. Your mileage may vary.
+the fork from L<AnyEvent::XSPromises>. Significant breaking changes happened
+from version 0.07 to 0.08. Such changes aren’t expected to be needed again,
+but that’s not guaranteed. Caveat emptor.
 
 =head1 PROMISE INTERFACE
 
@@ -65,16 +67,19 @@ implementation L<derives from ECMAScript promises|https://developer.mozilla.org/
 =head2 Promise callbacks: list vs. scalar context
 
 Most Perl promise libraries allow promises to resolve (or reject) with a list.
-The problem (in my view, anyway) with this pattern is: what do we do if a
-plural return includes a promise? Neither Promises/A+ nor ECMAScript’s
-promise standard offers guidance on how to handle this scenario, and there’s
-no “obvious” solution otherwise.
+The problem with this pattern is: what do we do if a plural return includes
+a promise? Neither Promises/A+ nor ECMAScript’s promise standard offers
+guidance on how to handle this scenario, and there’s no “obvious” solution
+otherwise. We could simply ignore the “extra” inputs, but what if one of those
+“extras” is itself a promise? What if there’s only one promise, but it’s not
+the first item returned?
 
-For that reason, this library executes all callbacks in scalar context.
-This matches both Promises/A+ and ECMAScript standards, which in the long
-term seems like a win. The divergence from the likes of L<Mojo::Promise>,
-L<Promises>, and L<AnyEvent::XSPromises>, is regrettable but seems a
-“lesser evil”.
+All of these scenarios allow for subtle bugs to arise. To avoid that,
+this library executes all callbacks in scalar context. Besides avoiding the
+“problem” states described above, this also matches both Promises/A+ and
+ECMAScript standards. The divergence from preexisting Perl promise libraries
+like L<Mojo::Promise>, L<Promises>, and L<AnyEvent::XSPromises>, is
+regrettable but seems a “lesser evil” overall.
 
 =head2 Additional notes
 
@@ -157,14 +162,14 @@ mid-flight controls like cancellation.
 =item * C<all()> and C<race()> should be implemented in XS,
 as should C<resolved()> and C<rejected()>.
 
-=item * C<finally()> should reject if its callback returns a rejected
-promise. Right now that doesn’t happen, but hopefully it will eventually.
-
 =back
 
 =head1 KNOWN ISSUES
 
 =over
+
+=item * C<finally()> ignores rejected promises given as returns rather than
+rejecting the promise as should happen.
 
 =item * Interpreter-based threads may or may not work.
 

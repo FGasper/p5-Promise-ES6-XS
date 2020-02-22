@@ -9,19 +9,19 @@ Promise::XS - Fast promises in Perl
     my $deferred = Promise::XS::deferred();
 
     # Do one of these once you have the result of your operation:
-    $deferred->resolve( 'foo', 'bar' );
-    $deferred->reject( 'oh', 'no!' );
+    $deferred->resolve( 'foo' );
+    $deferred->reject( 'oh no!' );
 
     # Give this to your caller:
     my $promise = $deferred->promise();
 
 The following aggregator functions are exposed:
 
-    # Resolves with a list of arrayrefs, one per promise.
+    # Resolves with an arrayref, one item per promise.
     # Rejects with the results from the first rejected promise.
     my $all_p = Promise::XS::all( $promise1, $promise2, .. );
 
-    # Resolves/rejects with the results from the first
+    # Resolves/rejects with the result from the first
     # resolved or rejected promise.
     my $race_p = Promise::XS::race( $promise3, $promise4, .. );
 
@@ -30,9 +30,9 @@ as `collect()`.
 
 The following also exist:
 
-    my $pre_resolved_promise = Promise::XS::resolved('already', 'done');
+    my $pre_resolved_promise = Promise::XS::resolved('already done');
 
-    my $pre_rejected_promise = Promise::XS::rejected('it’s', 'bad');
+    my $pre_rejected_promise = Promise::XS::rejected('badbad');
 
 All of `Promise::XS`’s static functions may be exported at load time,
 e.g., `use Promise::XS qw(deferred)`.
@@ -41,22 +41,41 @@ e.g., `use Promise::XS qw(deferred)`.
 
 This module exposes a Promise interface with its major parts
 implemented in XS for speed. It is a fork and refactor of
-[AnyEvent::XSPromises](https://metacpan.org/pod/AnyEvent::XSPromises). That module’s interface, a “bare-bones”
-subset of that from [Promises](https://metacpan.org/pod/Promises), is retained.
+[AnyEvent::XSPromises](https://metacpan.org/pod/AnyEvent::XSPromises), with some significant interface changes.
 
 # STATUS
 
 This module should be fairly stable but is still relatively untested since
-the fork from [AnyEvent::XSPromises](https://metacpan.org/pod/AnyEvent::XSPromises). Your mileage may vary.
+the fork from [AnyEvent::XSPromises](https://metacpan.org/pod/AnyEvent::XSPromises). Significant breaking changes happened
+from version 0.07 to 0.08. Such changes aren’t expected to be needed again,
+but that’s not guaranteed. Caveat emptor.
 
-# DIFFERENCES FROM ECMASCRIPT PROMISES
+# PROMISE INTERFACE
 
-This library is built for compatibility with pre-existing Perl promise
-libraries. It thus exhibits some salient differences from how
-ECMAScript promises work:
+The core functionality derives from the
+[Promises/A+ specification](https://promisesaplus.com/) standard. (See
+["EVENT LOOPS"](#event-loops) below for one important difference.) Its `finally()`
+implementation [derives from ECMAScript promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally).
 
-- Promise resolutions and rejections consist of _lists_, not
-single values.
+## Promise callbacks: list vs. scalar context
+
+Most Perl promise libraries allow promises to resolve (or reject) with a list.
+The problem with this pattern is: what do we do if a plural return includes
+a promise? Neither Promises/A+ nor ECMAScript’s promise standard offers
+guidance on how to handle this scenario, and there’s no “obvious” solution
+otherwise. We could simply ignore the “extra” inputs, but what if one of those
+“extras” is itself a promise? What if there’s only one promise, but it’s not
+the first item returned?
+
+All of these scenarios allow for subtle bugs to arise. To avoid that,
+this library executes all callbacks in scalar context. Besides avoiding the
+“problem” states described above, this also matches both Promises/A+ and
+ECMAScript standards. The divergence from preexisting Perl promise libraries
+like [Mojo::Promise](https://metacpan.org/pod/Mojo::Promise), [Promises](https://metacpan.org/pod/Promises), and [AnyEvent::XSPromises](https://metacpan.org/pod/AnyEvent::XSPromises), is
+regrettable but seems a “lesser evil” overall.
+
+## Additional notes
+
 - Neither the `resolve()` method of deferred objects
 nor the `resolved()` convenience function define behavior when given
 a promise object.
@@ -70,37 +89,11 @@ call “array references”). So whereas in ECMAScript you do:
 
         Promise::XS::all( $promise1, $promise2 );
 
+- Currently `finally()` does not recognize returned promises.
+Hopefully that will change in the future to match ECMAScript’s standard.
+
 See [Promise::ES6](https://metacpan.org/pod/Promise::ES6) for an interface that imitates ECMAScript promises
 more closely.
-
-# `finally()` AND OTHER PERL PROMISE LIBRARIES
-
-This module prioritizes compatibility with the
-[Promises/A+ specification](https://promisesaplus.com/). That standard
-defines only part of this interface, though; specifically, Promises/A+
-omits any mention of `catch()` or `finally()`.
-
-These two functions are defined as part of ECMAScript. That standard defines
-`catch()` simply as “syntactic sugar” around `then()`. ECMAScript defines
-`finally()`, though, in [different terms](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally):
-
-Given the following …
-
-    my $new = $p->finally( $callback )
-
-- `$callback` is given no arguments, and its return is ignored.
-- If `$callback` throws, `$new` is rejected with `$callback`’s
-exception; otherwise, `$new` has the same final state as `$p`.
-
-[Promise::ES6](https://metacpan.org/pod/Promise::ES6) and [Mojo::Promise](https://metacpan.org/pod/Mojo::Promise) implement the above behavior. As of
-version 0.08, this library does as well. (All of these also call $callback
-in void context.)
-
-[Promises](https://metacpan.org/pod/Promises) and [AnyEvent::XSPromises](https://metacpan.org/pod/AnyEvent::XSPromises) (as of this writing) implement it
-partly: in those libraries, `$callback`’s return is still ignored, but so is
-any exception that it may throw. `$callback` is also given the
-resolution/rejection values, despite that there’s no way to know whether
-those represent success or failure.
 
 # EVENT LOOPS
 
@@ -153,6 +146,8 @@ as should `resolved()` and `rejected()`.
 
 # KNOWN ISSUES
 
+- `finally()` ignores rejected promises given as returns rather than
+rejecting the promise as should happen.
 - Interpreter-based threads may or may not work.
 - This module interacts badly with Perl’s fork() implementation on
 Windows. There may be a workaround possible, but none is implemented for now.
