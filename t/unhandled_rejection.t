@@ -39,7 +39,32 @@ use Promise::XS;
     cmp_deeply(
         \@w,
         [ re( qr<nonono> ) ],
-        'die() in then() triggers warning even promise itself is GCed',
+        'die() in then() triggers warning when promise was never an SV',
+    ) or diag explain \@w;
+}
+
+{
+    my @w;
+    local $SIG{'__WARN__'} = sub { push @w, @_ };
+
+    {
+        my $d = Promise::XS::deferred();
+
+        my $p = $d->promise();
+
+        my $p2 = $p->then( sub {
+            die "nonono";
+        } );
+
+        undef $p2;
+
+        $d->resolve(234);
+    }
+
+    cmp_deeply(
+        \@w,
+        [ re( qr<nonono> ) ],
+        'die() in then() triggers warning when promise was an SV that’s GCed early',
     );
 }
 
@@ -62,11 +87,10 @@ use Promise::XS;
     cmp_deeply(
         \@w,
         [ re( qr<666> ) ],
-        'return rejected in then() triggers warning even promise itself is GCed',
+        'return rejected in then() triggers warning when promise itself never was an SV',
     );
 }
 
-# should warn because finally() rejects
 {
     my @w;
     local $SIG{'__WARN__'} = sub { push @w, @_ };
@@ -74,7 +98,28 @@ use Promise::XS;
     {
         my $d = Promise::XS::deferred();
 
+        $d->reject("nonono");
+    }
+
+    cmp_deeply(
+        \@w,
+        [],
+        'no warning if there was never a perl-ified promise',
+    ) or diag explain \@w;
+}
+
+# should warn because finally() rejects
+{
+diag "===============================";
+    my @w;
+    local $SIG{'__WARN__'} = sub { push @w, @_ };
+
+    {
+        my $d = Promise::XS::deferred();
+
+diag "creation of 2 promises; 1 should reap";
         my $p = $d->promise()->finally( sub { } );
+diag "1 should have reaped by now";
 
         $d->reject("nonono");
     }
@@ -83,7 +128,7 @@ use Promise::XS;
         \@w,
         [ re( qr<nonono> ) ],
         'rejection with no catch triggers warning',
-    );
+    ) or diag explain \@w;
 }
 
 # should warn because finally() rejects
@@ -100,17 +145,19 @@ use Promise::XS;
 
         $p->catch( sub { } );
 
+        diag "before reject";
         $d->reject("nonono");
+        diag "after reject";
     }
 
     cmp_deeply(
         \@w,
         [ re( qr<nonono> ) ],
         'rejected finally is uncaught',
-    );
+    ) or diag explain \@w;
 }
 
-# should warn because finally() rejection is caught
+# should NOT warn because finally() rejection is caught
 {
     my @w;
     local $SIG{'__WARN__'} = sub { push @w, @_ };
@@ -120,18 +167,28 @@ use Promise::XS;
 
         my $p = $d->promise();
 
-        my $f = $p->finally( sub { } )->catch( sub { } );
+        diag "created p1";
+
+        my $f = $p->finally( sub { } );
+
+        diag "created finally";
+
+        $f = $f->catch( sub { } );
+
+        diag "created catch, reaped finally";
 
         $p->catch( sub { } );
 
-        $d->reject("nonono");
+        diag "created & reaped 2nd catch";
+
+        $d->reject("awful");
     }
 
     cmp_deeply(
         \@w,
         [],
-        'when finally passthrough rejection is caught',
-    );
+        'no warning when finally passthrough rejection is caught',
+    ) or diag explain \@w;
 }
 
 #----------------------------------------------------------------------
