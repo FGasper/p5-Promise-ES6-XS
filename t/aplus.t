@@ -422,9 +422,7 @@ my %tests= (
 diag "======= series tests";
 
 for my $name (sort keys %tests) {
-#next if $name ne 'chain_should_work';
-next;
-    diag "===================== $name (synchronous)";
+    diag "$name (synchronous)";
 
     my $promise = $tests{$name}->()->then(sub {
         ok(1, $name);

@@ -16,19 +16,19 @@ Promise::XS - Fast promises in Perl
     my $deferred = Promise::XS::deferred();
 
     # Do one of these once you have the result of your operation:
-    $deferred->resolve( 'foo', 'bar' );
-    $deferred->reject( 'oh', 'no!' );
+    $deferred->resolve( 'foo' );
+    $deferred->reject( 'oh no!' );
 
     # Give this to your caller:
     my $promise = $deferred->promise();
 
 The following aggregator functions are exposed:
 
-    # Resolves with a list of arrayrefs, one per promise.
+    # Resolves with an arrayref, one item per promise.
     # Rejects with the results from the first rejected promise.
     my $all_p = Promise::XS::all( $promise1, $promise2, .. );
 
-    # Resolves/rejects with the results from the first
+    # Resolves/rejects with the result from the first
     # resolved or rejected promise.
     my $race_p = Promise::XS::race( $promise3, $promise4, .. );
 
@@ -37,9 +37,9 @@ as C<collect()>.
 
 The following also exist:
 
-    my $pre_resolved_promise = Promise::XS::resolved('already', 'done');
+    my $pre_resolved_promise = Promise::XS::resolved('already done');
 
-    my $pre_rejected_promise = Promise::XS::rejected('it’s', 'bad');
+    my $pre_rejected_promise = Promise::XS::rejected('badbad');
 
 All of C<Promise::XS>’s static functions may be exported at load time,
 e.g., C<use Promise::XS qw(deferred)>.
@@ -48,24 +48,37 @@ e.g., C<use Promise::XS qw(deferred)>.
 
 This module exposes a Promise interface with its major parts
 implemented in XS for speed. It is a fork and refactor of
-L<AnyEvent::XSPromises>. That module’s interface, a “bare-bones”
-subset of that from L<Promises>, is retained.
+L<AnyEvent::XSPromises>, with some significant interface changes.
 
 =head1 STATUS
 
 This module should be fairly stable but is still relatively untested since
 the fork from L<AnyEvent::XSPromises>. Your mileage may vary.
 
-=head1 DIFFERENCES FROM ECMASCRIPT PROMISES
+=head1 PROMISE INTERFACE
 
-This library is built for compatibility with pre-existing Perl promise
-libraries. It thus exhibits some salient differences from how
-ECMAScript promises work:
+The core functionality derives from the
+L<Promises/A+ specification|https://promisesaplus.com/> standard. (See
+L</EVENT LOOPS> below for one important difference.) Its C<finally()>
+implementation L<derives from ECMAScript promises|https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally>.
+
+=head2 Promise callbacks: list vs. scalar context
+
+Most Perl promise libraries allow promises to resolve (or reject) with a list.
+The problem (in my view, anyway) with this pattern is: what do we do if a
+plural return includes a promise? Neither Promises/A+ nor ECMAScript’s
+promise standard offers guidance on how to handle this scenario, and there’s
+no “obvious” solution otherwise.
+
+For that reason, this library executes all callbacks in scalar context.
+This matches both Promises/A+ and ECMAScript standards, which in the long
+term seems like a win. The divergence from the likes of L<Mojo::Promise>,
+L<Promises>, and L<AnyEvent::XSPromises>, is regrettable but seems a
+“lesser evil”.
+
+=head2 Additional notes
 
 =over
-
-=item * Promise resolutions and rejections consist of I<lists>, not
-single values.
 
 =item * Neither the C<resolve()> method of deferred objects
 nor the C<resolved()> convenience function define behavior when given
@@ -81,44 +94,13 @@ call “array references”). So whereas in ECMAScript you do:
 
     Promise::XS::all( $promise1, $promise2 );
 
+=item * Currently C<finally()> does not recognize returned promises.
+Hopefully that will change in the future to match ECMAScript’s standard.
+
 =back
 
 See L<Promise::ES6> for an interface that imitates ECMAScript promises
 more closely.
-
-=head1 C<finally()> AND OTHER PERL PROMISE LIBRARIES
-
-This module prioritizes compatibility with the
-L<Promises/A+ specification|https://promisesaplus.com/>. That standard
-defines only part of this interface, though; specifically, Promises/A+
-omits any mention of C<catch()> or C<finally()>.
-
-These two functions are defined as part of ECMAScript. That standard defines
-C<catch()> simply as “syntactic sugar” around C<then()>. ECMAScript defines
-C<finally()>, though, in L<different terms|https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally>:
-
-Given the following …
-
-    my $new = $p->finally( $callback )
-
-=over
-
-=item * C<$callback> is given no arguments, and its return is ignored.
-
-=item * If C<$callback> throws, C<$new> is rejected with C<$callback>’s
-exception; otherwise, C<$new> has the same final state as C<$p>.
-
-=back
-
-L<Promise::ES6> and L<Mojo::Promise> implement the above behavior. As of
-version 0.08, this library does as well. (All of these also call $callback
-in void context.)
-
-L<Promises> and L<AnyEvent::XSPromises> (as of this writing) implement it
-partly: in those libraries, C<$callback>’s return is still ignored, but so is
-any exception that it may throw. C<$callback> is also given the
-resolution/rejection values, despite that there’s no way to know whether
-those represent success or failure.
 
 =head1 EVENT LOOPS
 
@@ -175,6 +157,9 @@ mid-flight controls like cancellation.
 =item * C<all()> and C<race()> should be implemented in XS,
 as should C<resolved()> and C<rejected()>.
 
+=item * C<finally()> should reject if its callback returns a rejected
+promise. Right now that doesn’t happen, but hopefully it will eventually.
+
 =back
 
 =head1 KNOWN ISSUES
@@ -220,7 +205,6 @@ sub use_event {
 }
 
 sub resolved {
-use Carp::Always;
     return deferred()->resolve(@_)->promise();
 }
 

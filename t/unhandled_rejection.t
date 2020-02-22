@@ -110,16 +110,13 @@ use Promise::XS;
 
 # should warn because finally() rejects
 {
-diag "===============================";
     my @w;
     local $SIG{'__WARN__'} = sub { push @w, @_ };
 
     {
         my $d = Promise::XS::deferred();
 
-diag "creation of 2 promises; 1 should reap";
         my $p = $d->promise()->finally( sub { } );
-diag "1 should have reaped by now";
 
         $d->reject("nonono");
     }

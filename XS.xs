@@ -205,14 +205,14 @@ void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* orig
         if (callback_fn != NULL) {
             xspr_result_t* callback_result;
 
-fprintf(stderr,"running perl callback\n");
-sv_dump(callback_fn);
+//fprintf(stderr,"running perl callback\n");
+//sv_dump(callback_fn);
             callback_result = xspr_invoke_perl(aTHX_
                                       callback_fn,
                                       &(origin->finished.result->result),
                                       1
                                       );
-fprintf(stderr,"after callback\n");
+//fprintf(stderr,"after callback\n");
 
             if (callback->perl.next != NULL) {
                 int returned_promise = 0;
@@ -241,7 +241,7 @@ fprintf(stderr,"after callback\n");
                 }
 
                 if (!returned_promise) {
-fprintf(stderr, "settling\n");
+//fprintf(stderr, "settling\n");
 //sv_dump(callback_result->result);
                     xspr_promise_finish(aTHX_ callback->perl.next, callback_result);
                 }
@@ -293,8 +293,8 @@ fprintf(stderr, "settling\n");
 
         // As it happens, callback_fn should *always* be here.
         if (callback_fn != NULL) {
-fprintf(stderr, "running finally callback\n");
-sv_dump(callback_fn);
+//fprintf(stderr, "running finally callback\n");
+//sv_dump(callback_fn);
             xspr_result_t* callback_result = xspr_invoke_perl( aTHX_
                 callback_fn,
                 NULL, 0
@@ -310,7 +310,7 @@ sv_dump(callback_fn);
                 // Throw away the callback.
                 // TODO: Check to see if it’s a rejected promise, and
                 // defer resolution.
-fprintf(stderr, "throwing away callback result %p\n", callback_result);
+//fprintf(stderr, "throwing away callback result %p\n", callback_result);
                 xspr_result_decref(aTHX_ callback_result);
 
                 if (need_next_result) {
@@ -330,7 +330,7 @@ fprintf(stderr, "throwing away callback result %p\n", callback_result);
 
                         next_result = newresult;
 
-    fprintf(stderr, "result decref on pre-finally-callback result %p\n", oldresult);
+    //fprintf(stderr, "result decref on pre-finally-callback result %p\n", oldresult);
                         // xspr_result_decref(aTHX_ oldresult);
                     }
                     else {
@@ -343,7 +343,7 @@ fprintf(stderr, "throwing away callback result %p\n", callback_result);
         assert(next_result);
 
         if (need_next_result) {
-fprintf(stderr, "finishing finally promise; result = %p\n", next_result);
+//fprintf(stderr, "finishing finally promise; result = %p\n", next_result);
             xspr_promise_finish(aTHX_ callback->finally.next, next_result);
 
             if (next_result_needs_decref) {
@@ -513,8 +513,8 @@ xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_c
     PUSHMARK(SP);
     EXTEND(SP, input_count);
     for (i = 0; i < input_count; i++) {
-fprintf(stderr, "pushing %p (%d of %d)\n", inputs[i], 1 + i, input_count);
-sv_dump(inputs[i]);
+//fprintf(stderr, "pushing %p (%d of %d)\n", inputs[i], 1 + i, input_count);
+//sv_dump(inputs[i]);
         PUSHs(inputs[i]);
     }
     PUTBACK;
@@ -522,7 +522,7 @@ sv_dump(inputs[i]);
     /* Clear $_ so that callbacks don't end up talking to each other by accident */
     SAVE_DEFSV;
     DEFSV_set(sv_newmortal());
-fprintf(stderr,"before call_sv (inputs=%d)\n", input_count);
+//fprintf(stderr,"before call_sv (inputs=%d)\n", input_count);
 
     count = call_sv(perl_fn, G_EVAL | G_SCALAR);
 
@@ -533,7 +533,7 @@ fprintf(stderr,"before call_sv (inputs=%d)\n", input_count);
         result->result = newSVsv(ERRSV);
     } else {
         result = xspr_result_new(aTHX_ XSPR_RESULT_RESOLVED);
-fprintf(stderr,"after call_sv; count = %d\n", count);
+//fprintf(stderr,"after call_sv; count = %d\n", count);
         result->result = count ? SvREFCNT_inc(POPs) : &PL_sv_undef;
     }
     PUTBACK;
@@ -547,21 +547,21 @@ fprintf(stderr,"after call_sv; count = %d\n", count);
 /* Increments the ref count for xspr_result_t */
 void xspr_result_incref(pTHX_ xspr_result_t* result)
 {
-    fprintf(stderr, "incref result %p (-> %d)\n", result, result->refs + 1);
+    //fprintf(stderr, "incref result %p (-> %d)\n", result, result->refs + 1);
     result->refs++;
 }
 
 /* Decrements the ref count for the xspr_result_t, freeing the structure if needed */
 void xspr_result_decref(pTHX_ xspr_result_t* result)
 {
-    fprintf(stderr, "decref result %p (-> %d)\n", result, result->refs - 1);
+    //fprintf(stderr, "decref result %p (-> %d)\n", result, result->refs - 1);
     if (--(result->refs) == 0) {
         if (result->state == XSPR_RESULT_REJECTED && result->rejection_should_warn) {
-fprintf(stderr, "warn from decref %p\n", result);
+//fprintf(stderr, "warn from decref %p\n", result);
             _warn_unhandled_rejection_sv(aTHX_ result->result);
         }
 
-fprintf(stderr, "reap result %p\n", result);
+//fprintf(stderr, "reap result %p\n", result);
         SvREFCNT_dec(result->result);
         Safefree(result);
     }
@@ -594,20 +594,20 @@ void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
     promise->finished.result = result;
     xspr_result_incref(aTHX_ promise->finished.result);
 
-    fprintf(stderr, "finishing promise %p, result %p\n", promise, result);
+    //fprintf(stderr, "finishing promise %p, result %p\n", promise, result);
     unsigned i;
     for (i = 0; i < count; i++) {
-fprintf(stderr, "pre-check\n");
+//fprintf(stderr, "pre-check\n");
         if (pending_callbacks[i]->type == XSPR_CALLBACK_PERL && result->state == XSPR_RESULT_REJECTED && result->rejection_should_warn) {
-fprintf(stderr, "check1\n");
+//fprintf(stderr, "check1\n");
             SV* on_reject = pending_callbacks[i]->perl.on_reject;
-fprintf(stderr, "check2 %p\n", on_reject);
+//fprintf(stderr, "check2 %p\n", on_reject);
             if (on_reject && SvOK(on_reject)) {
-fprintf(stderr, "%p: have on_reject handler; setting rejection should warn = false\n", promise);
+//fprintf(stderr, "%p: have on_reject handler; setting rejection should warn = false\n", promise);
                 result->rejection_should_warn = false;
             }
         }
-fprintf(stderr, "past check\n");
+//fprintf(stderr, "past check\n");
 
         if (MY_CXT.deferral_cr) {
             xspr_queue_add(aTHX_ pending_callbacks[i], promise);
@@ -620,7 +620,7 @@ fprintf(stderr, "past check\n");
     if (MY_CXT.deferral_cr) {
         xspr_queue_maybe_schedule(aTHX);
     }
-    fprintf(stderr, "DONE finishing promise %p, result %p\n", promise, result);
+    //fprintf(stderr, "DONE finishing promise %p, result %p\n", promise, result);
 
     Safefree(pending_callbacks);
 }
@@ -630,7 +630,7 @@ xspr_result_t* xspr_result_new(pTHX_ xspr_result_state_t state)
 {
     xspr_result_t* result;
     Newxz(result, 1, xspr_result_t);
-    fprintf(stderr, "NEW RESULT %p\n", result);
+    //fprintf(stderr, "NEW RESULT %p\n", result);
     result->rejection_should_warn = true;
     result->state = state;
     result->refs = 1;
@@ -654,7 +654,7 @@ void xspr_promise_incref(pTHX_ xspr_promise_t* promise)
 void xspr_promise_decref(pTHX_ xspr_promise_t *promise)
 {
     if (--(promise->refs) == 0) {
-fprintf(stderr,"starting reap of promise %p\n", promise);
+//fprintf(stderr,"starting reap of promise %p\n", promise);
         if (promise->state == XSPR_STATE_PENDING) {
             /* XXX: is this a bad thing we should warn for? */
             int count = promise->pending.callbacks_count;
@@ -679,7 +679,7 @@ fprintf(stderr,"starting reap of promise %p\n", promise);
         }
 
         Safefree(promise);
-fprintf(stderr,"done reap of promise %p\n", promise);
+//fprintf(stderr,"done reap of promise %p\n", promise);
     }
 }
 
@@ -1128,7 +1128,7 @@ void
 DESTROY(SV *self_sv)
     CODE:
         DEFERRED_CLASS_TYPE* self = _get_deferred_from_sv(aTHX_ self_sv);
-        fprintf(stderr,"DESTROY on deferred with promise %p\n", self->promise);
+        //fprintf(stderr,"DESTROY on deferred with promise %p\n", self->promise);
 
         _warn_on_destroy_if_needed(aTHX_ self->promise, self_sv);
 
@@ -1138,9 +1138,9 @@ DESTROY(SV *self_sv)
 
         // fprintf(stderr, "DESTROY deferred, promise state %d\n", self->promise->state);
         if ( self->promise->state == XSPR_STATE_FINISHED ) {
-        fprintf(stderr, "deferred promise (%p) refs: %d; result (%p) refs: %d\n", self->promise, self->promise->refs, self->promise->finished.result, self->promise->finished.result->refs);
+        //fprintf(stderr, "deferred promise (%p) refs: %d; result (%p) refs: %d\n", self->promise, self->promise->refs, self->promise->finished.result, self->promise->finished.result->refs);
             if (self->promise->refs == 1 && self->promise->finished.result->refs == 1) {
-fprintf(stderr, "setting no-warn on result %p\n", self->promise->finished.result);
+//fprintf(stderr, "setting no-warn on result %p\n", self->promise->finished.result);
                 self->promise->finished.result->rejection_should_warn = false;
             }
         }
@@ -1189,7 +1189,7 @@ finally(SV* self_sv, SV* on_finally)
         PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
 
         xspr_promise_t* next = create_next_promise_if_needed(aTHX_ self_sv, &ST(0));
-        fprintf(stderr, "finally = %p\n", next);
+        //fprintf(stderr, "finally = %p\n", next);
 
         xspr_callback_t* callback = xspr_callback_new_finally(aTHX_ on_finally, next);
         xspr_promise_then(aTHX_ self->promise, callback);
@@ -1200,7 +1200,7 @@ void
 DESTROY(SV* self_sv)
     CODE:
         PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
-        fprintf(stderr, "reap perl promise %p\n", self->promise);
+        //fprintf(stderr, "reap perl promise %p\n", self->promise);
 
         /*
         if (self->promise->unhandled_rejection) {

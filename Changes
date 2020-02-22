@@ -4,12 +4,12 @@ Revision history for Perl extension Promise::XS:
 - MAJOR BREAKING CHANGE: Callbacks now run in scalar context. The prior
   behavior of running in list context allowed for weirdness like
   returning a promise plus additional items, in whatever order. Proper
-  behavior in this case isn’t clear from Promise/A+, and iterating through
+  behavior in this case isn’t clear from Promises/A+, and iterating through
   the return to warn or fail would slow everything down. Scalar context
-  conduces to more robust usage and hews closer to the popular ECMAScript
-  pattern.
+  conduces to more robust usage and hews closer to both Promises/A+ and
+  ECMAScript standards.
 - MAJOR BREAKING CHANGE: Due to the above change, all()/collect() now
-  resolves with a (scalar) array reference of the promise returns.
+  resolves with an array reference of the promise returns.
 - BREAKING CHANGE (minor): finally() now mimics ECMAScript’s interface.
   That means:
     * Callbacks now receive no arguments.
