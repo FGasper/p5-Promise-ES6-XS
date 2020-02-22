@@ -206,11 +206,13 @@ void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* orig
             xspr_result_t* callback_result;
 
 fprintf(stderr,"running perl callback\n");
+sv_dump(callback_fn);
             callback_result = xspr_invoke_perl(aTHX_
                                       callback_fn,
                                       &(origin->finished.result->result),
                                       1
                                       );
+fprintf(stderr,"after callback\n");
 
             if (callback->perl.next != NULL) {
                 int returned_promise = 0;
@@ -240,7 +242,7 @@ fprintf(stderr,"running perl callback\n");
                 }
 
                 if (!returned_promise) {
-//fprintf(stderr, "settling\n");
+fprintf(stderr, "settling\n");
 //sv_dump(callback_result->result);
                     xspr_promise_finish(aTHX_ callback->perl.next, callback_result);
                 }
@@ -264,6 +266,7 @@ fprintf(stderr,"running perl callback\n");
         // As it happens, callback_fn should *always* be here.
         if (callback_fn != NULL) {
 fprintf(stderr, "running finally callback\n");
+sv_dump(callback_fn);
             xspr_result_t* callback_result = xspr_invoke_perl( aTHX_
                 callback_fn,
                 NULL, 0
@@ -481,6 +484,8 @@ xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_c
     PUSHMARK(SP);
     EXTEND(SP, input_count);
     for (i = 0; i < input_count; i++) {
+fprintf(stderr, "pushing %p (%d of %d)\n", inputs[i], 1 + i, input_count);
+sv_dump(inputs[i]);
         PUSHs(inputs[i]);
     }
     PUTBACK;
@@ -488,6 +493,7 @@ xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_c
     /* Clear $_ so that callbacks don't end up talking to each other by accident */
     SAVE_DEFSV;
     DEFSV_set(sv_newmortal());
+fprintf(stderr,"before call_sv (inputs=%d)\n", input_count);
 
     count = call_sv(perl_fn, G_EVAL | G_SCALAR);
 
@@ -498,7 +504,8 @@ xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_c
         result->result = newSVsv(ERRSV);
     } else {
         result = xspr_result_new(aTHX_ XSPR_RESULT_RESOLVED);
-        result->result = SvREFCNT_inc(POPs);
+fprintf(stderr,"after call_sv; count = %d\n", count);
+        result->result = count ? SvREFCNT_inc(POPs) : &PL_sv_undef;
     }
     PUTBACK;
 
@@ -511,14 +518,14 @@ xspr_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV** inputs, unsigned input_c
 /* Increments the ref count for xspr_result_t */
 void xspr_result_incref(pTHX_ xspr_result_t* result)
 {
-    fprintf(stderr, "incref %p (-> %d)\n", result, result->refs + 1);
+    fprintf(stderr, "incref result %p (-> %d)\n", result, result->refs + 1);
     result->refs++;
 }
 
 /* Decrements the ref count for the xspr_result_t, freeing the structure if needed */
 void xspr_result_decref(pTHX_ xspr_result_t* result)
 {
-    fprintf(stderr, "decref %p (-> %d)\n", result, result->refs - 1);
+    fprintf(stderr, "decref result %p (-> %d)\n", result, result->refs - 1);
     if (--(result->refs) == 0) {
         if (result->state == XSPR_RESULT_REJECTED && result->rejection_should_warn) {
 fprintf(stderr, "warn from decref %p\n", result);
@@ -561,13 +568,17 @@ void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
     fprintf(stderr, "finishing promise %p, result %p\n", promise, result);
     unsigned i;
     for (i = 0; i < count; i++) {
+fprintf(stderr, "pre-check\n");
         if (pending_callbacks[i]->type == XSPR_CALLBACK_PERL && result->state == XSPR_RESULT_REJECTED && result->rejection_should_warn) {
+fprintf(stderr, "check1\n");
             SV* on_reject = pending_callbacks[i]->perl.on_reject;
-            if (SvOK(on_reject)) {
+fprintf(stderr, "check2 %p\n", on_reject);
+            if (on_reject && SvOK(on_reject)) {
 fprintf(stderr, "%p: have on_reject handler; setting rejection should warn = false\n", promise);
                 result->rejection_should_warn = false;
             }
         }
+fprintf(stderr, "past check\n");
 
         if (MY_CXT.deferral_cr) {
             xspr_queue_add(aTHX_ pending_callbacks[i], promise);
