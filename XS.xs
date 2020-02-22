@@ -208,6 +208,7 @@ void xspr_callback_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* orig
                 // that has no “next” promise. By definition that’s an
                 // unhandled rejection.
                 if (result->state == XSPR_RESULT_REJECTED) {
+//warn("warning cuz null\n");
                     _warn_unhandled_rejection(aTHX_ result->result);
                 }
             }
@@ -555,8 +556,9 @@ void xspr_promise_decref(pTHX_ xspr_promise_t *promise)
             Safefree(callbacks);
 
         } else if (promise->state == XSPR_STATE_FINISHED) {
-            if (promise->unhandled_rejection) {
-                _warn_unhandled_rejection(aTHX_ promise->unhandled_rejection->result);
+            if (promise->finished.result->state == XSPR_RESULT_REJECTED && promise->unhandled_rejection) {
+// warn("about to warn\n");
+                //_warn_unhandled_rejection(aTHX_ promise->unhandled_rejection->result);
             }
 
             xspr_result_decref(aTHX_ promise->finished.result);
@@ -1056,6 +1058,12 @@ void
 DESTROY(SV* self_sv)
     CODE:
         PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
+
+        if (self->promise->unhandled_rejection) {
+            xspr_result_t* rejection = self->promise->unhandled_rejection;
+
+            _warn_unhandled_rejection(aTHX_ rejection->result);
+        }
 
         _warn_on_destroy_if_needed(aTHX_ self->promise, self_sv);
 

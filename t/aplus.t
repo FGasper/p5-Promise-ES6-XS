@@ -416,6 +416,38 @@ my %tests= (
     },
 );
 
+#----------------------------------------------------------------------
+# Synchronous tests
+
+diag "======= series tests";
+
+for my $name (sort keys %tests) {
+    diag "$name (synchronous)";
+
+    my $promise = $tests{$name}->()->then(sub {
+        ok(1, $name);
+    }, sub {
+        fail($name) or diag $_[0];
+    });
+
+    my $cv = AnyEvent->condvar();
+
+    $promise->then(sub {
+        ok(1, "All good");
+        1;
+    }, sub {
+        fail("Something unexpected happened!");
+        die "Not good";
+    })->finally($cv);
+
+    $cv->recv();
+}
+
+#----------------------------------------------------------------------
+# Parallel tests
+
+diag "======= parallel tests";
+
 my @promises= map {
     my $test= $_;
     $tests{$test}->()->then(sub {
@@ -423,7 +455,7 @@ my @promises= map {
     }, sub {
         fail($test) or diag $_[0];
     })
-} keys %tests;
+} sort keys %tests;
 
 my $cv= AnyEvent->condvar();
 collect(@promises)->then(sub {
@@ -435,6 +467,9 @@ collect(@promises)->then(sub {
 })->finally($cv);
 
 $cv->recv;
+
+#----------------------------------------------------------------------
+
 done_testing;
 
 package MyBadCode;
