@@ -220,8 +220,6 @@ fprintf(stderr,"after callback\n");
                 if (callback_result->state == XSPR_RESULT_RESOLVED) {
                     xspr_promise_t* promise = xspr_promise_from_sv(aTHX_ callback_result->result);
                     if (promise != NULL) {
-                        returned_promise = 1;
-
                         if ( promise == callback->perl.next) {
                             /* This is an extreme corner case the A+ spec made us implement: we need to reject
                             * cases where the promise created from then() is passed back to its own callback */
@@ -238,6 +236,7 @@ fprintf(stderr,"after callback\n");
                         }
 
                         xspr_promise_decref(aTHX_ promise);
+                        returned_promise = 1;
                     }
                 }
 
@@ -263,6 +262,35 @@ fprintf(stderr, "settling\n");
         bool next_result_needs_decref = false;
         bool need_next_result = (callback->finally.next != NULL);
 
+/*
+        xspr_result_t* result;
+
+        if (callback_fn != NULL) {
+            result = xspr_invoke_perl( aTHX_
+                 callback_fn,
+                 NULL, 0
+            );
+
+            if (result->state == XSPR_RESULT_REJECTED) {
+                // xspr_result_decref(aTHX_ origin->finished.result);
+                next_result = result;
+                next_result_needs_decref = true;
+            }
+            else {
+                xspr_result_decref(aTHX_ result);
+                next_result = origin->finished.result;
+            }
+        }
+
+        if (need_next_result) {
+            xspr_promise_finish(aTHX_ callback->finally.next, next_result);
+        }
+
+        if (next_result_needs_decref) {
+            xspr_result_decref(aTHX_ next_result);
+        }
+*/
+
         // As it happens, callback_fn should *always* be here.
         if (callback_fn != NULL) {
 fprintf(stderr, "running finally callback\n");
@@ -273,8 +301,9 @@ sv_dump(callback_fn);
             );
 
             if (callback_result->state == XSPR_RESULT_REJECTED) {
-                xspr_result_decref(aTHX_ origin->finished.result);
+                // xspr_result_decref(aTHX_ origin->finished.result);
                 next_result = callback_result;
+                next_result_needs_decref = true;
             }
             else {
 
@@ -796,6 +825,7 @@ static inline xspr_promise_t* create_promise(pTHX) {
 
     xspr_promise_t* promise = xspr_promise_new(aTHX);
 
+/*
     SV **detect_in_stash = hv_fetchs(
         MY_CXT.pxs_base_stash,
         "DETECT_MEMORY_LEAKS",
@@ -810,6 +840,9 @@ static inline xspr_promise_t* create_promise(pTHX) {
     else {
         promise->detect_leak_pid = 0;
     }
+*/
+SV *detect_leak_perl = get_sv("Promise::XS::DETECT_MEMORY_LEAKS", 0);
+promise->detect_leak_pid = SvTRUE(detect_leak_perl) ? getpid() : 0;
 
     return promise;
 }
