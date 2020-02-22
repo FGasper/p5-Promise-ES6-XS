@@ -825,7 +825,6 @@ static inline xspr_promise_t* create_promise(pTHX) {
 
     xspr_promise_t* promise = xspr_promise_new(aTHX);
 
-/*
     SV **detect_in_stash = hv_fetchs(
         MY_CXT.pxs_base_stash,
         "DETECT_MEMORY_LEAKS",
@@ -840,9 +839,6 @@ static inline xspr_promise_t* create_promise(pTHX) {
     else {
         promise->detect_leak_pid = 0;
     }
-*/
-SV *detect_leak_perl = get_sv("Promise::XS::DETECT_MEMORY_LEAKS", 0);
-promise->detect_leak_pid = SvTRUE(detect_leak_perl) ? getpid() : 0;
 
     return promise;
 }
