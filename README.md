@@ -59,10 +59,10 @@ implementation [derives from ECMAScript promises](https://developer.mozilla.org/
 
 ## Promise callbacks: list vs. scalar context
 
-Most Perl promise libraries allow promises to resolve (or reject) with a list.
-The problem with this pattern is: what do we do if a plural return includes
-a promise? Neither Promises/A+ nor ECMAScript’s promise standard offers
-guidance on how to handle this scenario, and there’s no “obvious” solution
+Most Perl promise libraries allow promises to resolve or reject with multiple
+values. This is eminently “perlish”, but what do we do if a plural return
+includes a promise? Neither Promises/A+ nor ECMAScript’s promise standard
+describes how to handle this scenario, and there’s no “obvious” solution
 otherwise. We could simply ignore the “extra” inputs, but what if one of those
 “extras” is itself a promise? What if there’s only one promise, but it’s not
 the first item returned?
@@ -78,8 +78,8 @@ regrettable but seems a “lesser evil” overall.
 
 - Neither the `resolve()` method of deferred objects
 nor the `resolved()` convenience function define behavior when given
-a promise object.
-- The `all()` and `race()` functions accept a list of promises,
+a promise object. Don’t do it.
+- The `all()` and `race()` functions accept a list,
 not a “scalar-array-thing” (ECMAScript “arrays” being what in Perl we
 call “array references”). So whereas in ECMAScript you do:
 
@@ -88,9 +88,6 @@ call “array references”). So whereas in ECMAScript you do:
     … in this library it’s:
 
         Promise::XS::all( $promise1, $promise2 );
-
-- Currently `finally()` does not recognize returned promises.
-Hopefully that will change in the future to match ECMAScript’s standard.
 
 See [Promise::ES6](https://metacpan.org/pod/Promise::ES6) for an interface that imitates ECMAScript promises
 more closely.
@@ -146,8 +143,6 @@ as should `resolved()` and `rejected()`.
 
 # KNOWN ISSUES
 
-- `finally()` ignores rejected promises given as returns rather than
-rejecting the promise as should happen.
 - Interpreter-based threads may or may not work.
 - This module interacts badly with Perl’s fork() implementation on
 Windows. There may be a workaround possible, but none is implemented for now.
