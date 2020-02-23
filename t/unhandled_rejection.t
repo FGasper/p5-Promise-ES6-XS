@@ -91,22 +91,22 @@ use Promise::XS;
     );
 }
 
-#{
-#    my @w;
-#    local $SIG{'__WARN__'} = sub { push @w, @_ };
-#
-#    {
-#        my $d = Promise::XS::deferred();
-#
-#        $d->reject("nonono");
-#    }
-#
-#    cmp_deeply(
-#        \@w,
-#        [],
-#        'no warning if there was never a perl-ified promise',
-#    ) or diag explain \@w;
-#}
+{
+    my @w;
+    local $SIG{'__WARN__'} = sub { push @w, @_ };
+
+    {
+        my $d = Promise::XS::deferred();
+
+        $d->reject("nonono");
+    }
+
+    cmp_deeply(
+        \@w,
+        [ re( qr/nonono/ ) ],
+        'warning if there was never a perl-ified promise',
+    ) or diag explain \@w;
+}
 
 # should warn because finally() rejects
 {
@@ -116,9 +116,7 @@ use Promise::XS;
     {
         my $d = Promise::XS::deferred();
 
-        # The finally() creates a separate result that is separately
-        # lacking in catch. So it gets its own separate unhandled-rejection
-        # warning.
+        # The finally() does not create a separate result.
         my $p = $d->promise()->finally( sub { } );
 
         $d->reject("nonono");
@@ -126,12 +124,12 @@ use Promise::XS;
 
     cmp_deeply(
         \@w,
-        [ map { re( qr<nonono> ) } 1 .. 2 ],
-        'rejection with finally but no catch triggers 2 warnings',
+        [ re( qr<nonono> ) ],
+        'rejection with finally but no catch triggers 1 warning',
     ) or diag explain \@w;
 }
 
-# should warn because finally() rejects
+# should not warn because finally() doesn't get its own result
 {
 diag "------------------------";
     my @w;
@@ -153,7 +151,7 @@ diag "------------------------";
 
     cmp_deeply(
         \@w,
-        [ re( qr<nonono> ) ],
+        [],
         'rejected finally is uncaught',
     ) or diag explain \@w;
 }
