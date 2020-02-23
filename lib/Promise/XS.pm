@@ -66,10 +66,10 @@ implementation L<derives from ECMAScript promises|https://developer.mozilla.org/
 
 =head2 Promise callbacks: list vs. scalar context
 
-Most Perl promise libraries allow promises to resolve (or reject) with a list.
-The problem with this pattern is: what do we do if a plural return includes
-a promise? Neither Promises/A+ nor ECMAScript’s promise standard offers
-guidance on how to handle this scenario, and there’s no “obvious” solution
+Most Perl promise libraries allow promises to resolve or reject with multiple
+values. This is eminently “perlish”, but what do we do if a plural return
+includes a promise? Neither Promises/A+ nor ECMAScript’s promise standard
+describes how to handle this scenario, and there’s no “obvious” solution
 otherwise. We could simply ignore the “extra” inputs, but what if one of those
 “extras” is itself a promise? What if there’s only one promise, but it’s not
 the first item returned?
@@ -87,9 +87,9 @@ regrettable but seems a “lesser evil” overall.
 
 =item * Neither the C<resolve()> method of deferred objects
 nor the C<resolved()> convenience function define behavior when given
-a promise object.
+a promise object. Don’t do it.
 
-=item * The C<all()> and C<race()> functions accept a list of promises,
+=item * The C<all()> and C<race()> functions accept a list,
 not a “scalar-array-thing” (ECMAScript “arrays” being what in Perl we
 call “array references”). So whereas in ECMAScript you do:
 
@@ -98,9 +98,6 @@ call “array references”). So whereas in ECMAScript you do:
 … in this library it’s:
 
     Promise::XS::all( $promise1, $promise2 );
-
-=item * Currently C<finally()> does not recognize returned promises.
-Hopefully that will change in the future to match ECMAScript’s standard.
 
 =back
 
@@ -167,9 +164,6 @@ as should C<resolved()> and C<rejected()>.
 =head1 KNOWN ISSUES
 
 =over
-
-=item * C<finally()> ignores rejected promises given as returns rather than
-rejecting the promise as should happen.
 
 =item * Interpreter-based threads may or may not work.
 

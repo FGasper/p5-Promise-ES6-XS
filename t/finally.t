@@ -18,7 +18,7 @@ my ($args, $wantarray);
 my $finally = $p->finally( sub {
     $args = \@_;
     $wantarray = wantarray;
-    return 666;
+    return 'throw me away';
 } );
 
 is_deeply( $args, [], 'no args given to finally() callback' );
