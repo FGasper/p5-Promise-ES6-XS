@@ -293,8 +293,9 @@ fprintf(stderr, "creating callback chain from finally callback\n");
                     bool final_result_needs_decref = false;
 
                     if ((callback->type == XSPR_CALLBACK_FINALLY) && (callback_result->state == XSPR_RESULT_RESOLVED)) {
-                        CLONE_RESULT(origin->finished.result, final_result);
-                        final_result_needs_decref = true;
+                        // CLONE_RESULT(origin->finished.result, final_result);
+                        // final_result_needs_decref = true;
+                        final_result = origin->finished.result;
                     }
                     else {
                         final_result = callback_result;
