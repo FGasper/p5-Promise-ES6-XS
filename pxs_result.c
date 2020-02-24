@@ -1,3 +1,5 @@
+
+#include <stdbool.h>
 #include "pxs_result.h"
 
 /* Create a new pxs_result_t object with the given number of item slots */
