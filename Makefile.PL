@@ -17,6 +17,11 @@ WriteMakefile(
     INC               => '-I.', # e.g., '-I. -I/usr/include/other'
     LICENSE           => "perl_5",
 
+    OBJECT => [
+        '$(BASEEXT)$(OBJ_EXT)',
+        'pxs_result.o',
+    ],
+
     META_MERGE => {
         'meta-spec' => { version => 2 },
         resources => {

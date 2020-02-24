@@ -108,7 +108,27 @@ use Promise::XS;
     ) or diag explain \@w;
 }
 
-# should warn because finally() rejects
+# should warn because $d->promise() is uncaught
+{
+    my @w;
+    local $SIG{'__WARN__'} = sub { push @w, @_ };
+
+    {
+        my $d = Promise::XS::deferred();
+
+        # The finally() does not create a separate result.
+        my $p = $d->promise()->finally( sub { } );
+
+        $d->reject("nonono");
+    }
+
+    cmp_deeply(
+        \@w,
+        [ re( qr<nonono> ) ],
+        'rejection with finally but no catch triggers 1 warning',
+    ) or diag explain \@w;
+}
+
 {
     my @w;
     local $SIG{'__WARN__'} = sub { push @w, @_ };
