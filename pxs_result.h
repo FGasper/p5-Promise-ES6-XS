@@ -7,6 +7,8 @@
 #include "perl.h"
 #include "XSUB.h"
 
+#define PXS_RESULT_VALUE(result) result->result
+
 typedef struct pxs_result_s pxs_result_t;
 
 typedef enum {
@@ -23,7 +25,7 @@ struct pxs_result_s {
     int refs;
 };
 
-pxs_result_t* pxs_result_new(pTHX_ pxs_result_state_t state);
+pxs_result_t* pxs_result_new(pTHX_ pxs_result_state_t state, SV* value);
 pxs_result_t* pxs_result_from_error(pTHX_ const char *error);
 void pxs_result_incref(pTHX_ pxs_result_t* result);
 void pxs_result_decref(pTHX_ pxs_result_t* result);

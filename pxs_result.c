@@ -1,12 +1,12 @@
 #include "pxs_result.h"
 
 /* Create a new pxs_result_t object with the given number of item slots */
-pxs_result_t* pxs_result_new(pTHX_ pxs_result_state_t state)
+pxs_result_t* pxs_result_new(pTHX_ pxs_result_state_t state, SV* value)
 {
     pxs_result_t* result;
     Newxz(result, 1, pxs_result_t);
-    //fprintf(stderr, "NEW RESULT %p\n", result);
     result->rejection_should_warn = true;
+    result->result = value;
     result->state = state;
     result->refs = 1;
     return result;
@@ -14,9 +14,7 @@ pxs_result_t* pxs_result_new(pTHX_ pxs_result_state_t state)
 
 pxs_result_t* pxs_result_from_error(pTHX_ const char *error)
 {
-    pxs_result_t* result = pxs_result_new(aTHX_ PXS_RESULT_REJECTED);
-    result->result = newSVpv(error, 0);
-    return result;
+    return pxs_result_new(aTHX_ PXS_RESULT_REJECTED, newSVpv(error, 0));
 }
 
 void _call_pv_with_args( pTHX_ const char* subname, SV** args, unsigned argscount )

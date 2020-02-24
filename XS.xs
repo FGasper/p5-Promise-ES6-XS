@@ -445,12 +445,11 @@ pxs_result_t* xspr_invoke_perl(pTHX_ SV* perl_fn, SV* input)
     SPAGAIN;
 
     if (SvTRUE(ERRSV)) {
-        result = pxs_result_new(aTHX_ PXS_RESULT_REJECTED);
-        result->result = newSVsv(ERRSV);
+        result = pxs_result_new(aTHX_ PXS_RESULT_REJECTED, newSVsv(ERRSV));
     } else {
-        result = pxs_result_new(aTHX_ PXS_RESULT_RESOLVED);
-//fprintf(stderr,"after call_sv; count = %d\n", count);
-        result->result = count ? SvREFCNT_inc(POPs) : &PL_sv_undef;
+        result = pxs_result_new(aTHX_ PXS_RESULT_RESOLVED,
+            count ? SvREFCNT_inc(POPs) : &PL_sv_undef
+        );
     }
     PUTBACK;
 
@@ -829,21 +828,6 @@ CLONE(...)
 
 #endif /* USE_ITHREADS && defined(sv_dup_inc) */
 
-#SV *
-#resolved(...)
-#    CODE:
-#        pxs_result_t* result = pxs_result_new(aTHX_ PXS_RESULT_RESOLVED, items);
-#        unsigned i;
-#        for (i = 0; i < items; i++) {
-#            result->results[i] = newSVsv(ST(i));
-#        }
-#
-#        xspr_promise_t* promise = create_promise(aTHX);
-#        xspr_promise_finish(aTHX_ promise, result);
-#        pxs_result_decref(aTHX_ result);
-#    OUTPUT:
-#        RETVAL
-
 #----------------------------------------------------------------------
 
 MODULE = Promise::XS     PACKAGE = Promise::XS::Deferred
@@ -930,8 +914,7 @@ resolve(SV *self_sv, SV *value = NULL)
 
         if (value == NULL) value = &PL_sv_undef;
 
-        pxs_result_t* result = pxs_result_new(aTHX_ PXS_RESULT_RESOLVED);
-        result->result = newSVsv(value);
+        pxs_result_t* result = pxs_result_new(aTHX_ PXS_RESULT_RESOLVED, newSVsv(value));
 
         xspr_promise_finish(aTHX_ self->promise, result);
         pxs_result_decref(aTHX_ result);
@@ -957,8 +940,7 @@ reject(SV *self_sv, SV *value = NULL)
 
         if (value == NULL) value = &PL_sv_undef;
 
-        pxs_result_t* result = pxs_result_new(aTHX_ PXS_RESULT_REJECTED);
-        result->result = newSVsv(value);
+        pxs_result_t* result = pxs_result_new(aTHX_ PXS_RESULT_REJECTED, newSVsv(value));
 
         xspr_promise_finish(aTHX_ self->promise, result);
         pxs_result_decref(aTHX_ result);
