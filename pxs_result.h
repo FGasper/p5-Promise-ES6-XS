@@ -7,25 +7,25 @@
 #include "perl.h"
 #include "XSUB.h"
 
-typedef struct xspr_result_s xspr_result_t;
+typedef struct pxs_result_s pxs_result_t;
 
 typedef enum {
-    XSPR_RESULT_NONE,
-    XSPR_RESULT_RESOLVED,
-    XSPR_RESULT_REJECTED,
-    XSPR_RESULT_BOTH
-} xspr_result_state_t;
+    PXS_RESULT_NONE,
+    PXS_RESULT_RESOLVED,
+    PXS_RESULT_REJECTED,
+    PXS_RESULT_BOTH
+} pxs_result_state_t;
 
-struct xspr_result_s {
-    xspr_result_state_t state;
+struct pxs_result_s {
+    pxs_result_state_t state;
     bool rejection_should_warn;
     SV* result;
     int refs;
 };
 
-xspr_result_t* xspr_result_new(pTHX_ xspr_result_state_t state);
-xspr_result_t* xspr_result_from_error(pTHX_ const char *error);
-void xspr_result_incref(pTHX_ xspr_result_t* result);
-void xspr_result_decref(pTHX_ xspr_result_t* result);
+pxs_result_t* pxs_result_new(pTHX_ pxs_result_state_t state);
+pxs_result_t* pxs_result_from_error(pTHX_ const char *error);
+void pxs_result_incref(pTHX_ pxs_result_t* result);
+void pxs_result_decref(pTHX_ pxs_result_t* result);
 
 #endif

@@ -1,10 +1,10 @@
 #include "pxs_result.h"
 
-/* Create a new xspr_result_t object with the given number of item slots */
-xspr_result_t* xspr_result_new(pTHX_ xspr_result_state_t state)
+/* Create a new pxs_result_t object with the given number of item slots */
+pxs_result_t* pxs_result_new(pTHX_ pxs_result_state_t state)
 {
-    xspr_result_t* result;
-    Newxz(result, 1, xspr_result_t);
+    pxs_result_t* result;
+    Newxz(result, 1, pxs_result_t);
     //fprintf(stderr, "NEW RESULT %p\n", result);
     result->rejection_should_warn = true;
     result->state = state;
@@ -12,9 +12,9 @@ xspr_result_t* xspr_result_new(pTHX_ xspr_result_state_t state)
     return result;
 }
 
-xspr_result_t* xspr_result_from_error(pTHX_ const char *error)
+pxs_result_t* pxs_result_from_error(pTHX_ const char *error)
 {
-    xspr_result_t* result = xspr_result_new(aTHX_ XSPR_RESULT_REJECTED);
+    pxs_result_t* result = pxs_result_new(aTHX_ PXS_RESULT_REJECTED);
     result->result = newSVpv(error, 0);
     return result;
 }
@@ -51,21 +51,21 @@ static inline void _warn_unhandled_rejection_sv(pTHX_ SV* reason) {
     _call_pv_with_args(aTHX_ "Promise::XS::Promise::_warn_unhandled", warn_args, 1);
 }
 
-/* Increments the ref count for xspr_result_t */
-void xspr_result_incref(pTHX_ xspr_result_t* result)
+/* Increments the ref count for pxs_result_t */
+void pxs_result_incref(pTHX_ pxs_result_t* result)
 {
     //fprintf(stderr, "incref result %p (-> %d)\n", result, result->refs + 1);
     result->refs++;
 }
 
-/* Decrements the ref count for the xspr_result_t, freeing the structure if needed */
-void xspr_result_decref(pTHX_ xspr_result_t* result)
+/* Decrements the ref count for the pxs_result_t, freeing the structure if needed */
+void pxs_result_decref(pTHX_ pxs_result_t* result)
 {
     //fprintf(stderr, "decref result %p (-> %d)\n", result, result->refs - 1);
     if (--(result->refs) == 0) {
 //fprintf(stderr, "start reap result %p (state: %d), should warn? %d\n", result, result->state, result->rejection_should_warn);
 //sv_dump(result->result);
-        if (result->state == XSPR_RESULT_REJECTED && result->rejection_should_warn) {
+        if (result->state == PXS_RESULT_REJECTED && result->rejection_should_warn) {
 //fprintf(stderr, "warn from decref %p\n", result);
             _warn_unhandled_rejection_sv(aTHX_ result->result);
         }
