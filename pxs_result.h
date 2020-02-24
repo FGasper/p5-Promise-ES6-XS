@@ -7,7 +7,10 @@
 #include "perl.h"
 #include "XSUB.h"
 
-#define PXS_RESULT_VALUE(result) result->result
+#define PXS_RESULT_VALUE(result) result->value
+
+#define PXS_RESULT_IS_RESOLVED(result) (result->state == PXS_RESULT_RESOLVED)
+#define PXS_RESULT_IS_REJECTED(result) (result->state == PXS_RESULT_REJECTED)
 
 typedef struct pxs_result_s pxs_result_t;
 
@@ -21,7 +24,7 @@ typedef enum {
 struct pxs_result_s {
     pxs_result_state_t state;
     bool rejection_should_warn;
-    SV* result;
+    SV* value;
     int refs;
 };
 

@@ -6,7 +6,7 @@ pxs_result_t* pxs_result_new(pTHX_ pxs_result_state_t state, SV* value)
     pxs_result_t* result;
     Newxz(result, 1, pxs_result_t);
     result->rejection_should_warn = true;
-    result->result = value;
+    result->value = value;
     result->state = state;
     result->refs = 1;
     return result;
@@ -52,7 +52,6 @@ static inline void _warn_unhandled_rejection_sv(pTHX_ SV* reason) {
 /* Increments the ref count for pxs_result_t */
 void pxs_result_incref(pTHX_ pxs_result_t* result)
 {
-    //fprintf(stderr, "incref result %p (-> %d)\n", result, result->refs + 1);
     result->refs++;
 }
 
@@ -61,15 +60,11 @@ void pxs_result_decref(pTHX_ pxs_result_t* result)
 {
     //fprintf(stderr, "decref result %p (-> %d)\n", result, result->refs - 1);
     if (--(result->refs) == 0) {
-//fprintf(stderr, "start reap result %p (state: %d), should warn? %d\n", result, result->state, result->rejection_should_warn);
-//sv_dump(result->result);
         if (result->state == PXS_RESULT_REJECTED && result->rejection_should_warn) {
-//fprintf(stderr, "warn from decref %p\n", result);
-            _warn_unhandled_rejection_sv(aTHX_ result->result);
+            _warn_unhandled_rejection_sv(aTHX_ PXS_RESULT_VALUE(result));
         }
 
-//fprintf(stderr, "reap result %p\n", result);
-        SvREFCNT_dec(result->result);
+        SvREFCNT_dec( PXS_RESULT_VALUE(result) );
         Safefree(result);
     }
 }
