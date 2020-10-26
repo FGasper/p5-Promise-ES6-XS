@@ -1,0 +1,13 @@
+^\.gitignore$
+^\.travis\.yml$
+^cpanfile$
+^\.github/
+^\.git/
+^blib/
+^Makefile$
+^MANIFEST.bak$
+^MYMETA\.
+^pm_to_blib$
+\.bs$
+\.c$
+\.o$
