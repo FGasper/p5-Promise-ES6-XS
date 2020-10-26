@@ -19,9 +19,9 @@ perl:
 
 before_install:
     - eval $(curl https://travis-perl.github.io/init) --auto
-    - "cpanm AnyEvent ||:"
-    - "cpanm IO::Async ||:"
-    - "cpanm Mojolicious ||:"
+    - "cpanm --notest AnyEvent ||:"
+    - "cpanm --notest IO::Async ||:"
+    - "cpanm --notest Mojolicious ||:"
     - cpanm --notest --installdeps .
 
 jobs:
