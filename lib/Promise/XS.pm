@@ -202,6 +202,8 @@ Windows. There may be a workaround possible, but none is implemented for now.
 
 =cut
 
+our $VERSION = '0.11';
+
 use Exporter 'import';
 our @EXPORT_OK= qw/all collect deferred resolved rejected/;
 

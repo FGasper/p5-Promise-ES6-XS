@@ -1,5 +1,9 @@
 Revision history for Perl extension Promise::XS:
 
+0.11 ??
+- Advertise $VERSION in all modules
+- Get version from Promise::XS
+
 0.10 Fri 17 Jul 2020
 - BUG FIX: Fix clear_unhandled_rejection() to work again.
 - BUG FIX: Pre-resolved promises no longer break race().
