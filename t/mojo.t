@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 use Promise::XS;
 
-eval { require Mojo::IOLoop; 1 } or plan skip_all => $@;
+eval { require Mojo::IOLoop; 1 } or plan skip_all => "Mojo::IOLoop is not available";
 
 require Mojolicious;
 diag "Mojolicious $Mojolicious::VERSION";

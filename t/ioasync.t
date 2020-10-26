@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 use Promise::XS;
 
-eval { require IO::Async::Loop; 1 } or plan skip_all => $@;
+eval { require IO::Async::Loop; 1 } or plan skip_all => 'Need IO::Async::Loop for these tests.';
 
 diag "IO::Async::Loop $IO::Async::Loop::VERSION";
 
