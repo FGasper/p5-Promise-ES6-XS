@@ -52,6 +52,12 @@ e.g., C<use Promise::XS qw(deferred)>.
 
 =head1 DESCRIPTION
 
+=begin html
+
+<a href='https://coveralls.io/github/FGasper/p5-Promise-XS?branch=master'><img src='https://coveralls.io/repos/github/FGasper/p5-Promise-XS/badge.svg?branch=master' alt='Coverage Status' /></a>
+
+=end html
+
 This module exposes a Promise interface with its major parts
 implemented in XS for speed. It is a fork and refactor of
 L<AnyEvent::XSPromises>. That module’s interface, a “bare-bones”
