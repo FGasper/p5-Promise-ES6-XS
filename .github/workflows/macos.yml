@@ -38,5 +38,9 @@ jobs:
         run: perl Makefile.PL
       - name: make
         run: make
-      - name: Run Tests
-        run: make test
+      - name: Run tests (with coverage)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cpanm -n Devel::Cover::Report::Coveralls
+          cover -test -report Coveralls
