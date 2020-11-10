@@ -42,5 +42,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cpanm -n Devel::Cover::Report::Coveralls
+          curl -L https://cpanmin.us | perl - --notest Devel::Cover::Report::Coveralls
           cover -test -report Coveralls
