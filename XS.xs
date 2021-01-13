@@ -29,12 +29,17 @@
 
 #define UNUSED(x) (void)(x)
 
-#define _MAX_CALLBACK_DEPTH 254
+#define _MAX_RECURSION 254
+
+/* We could look here at the full stack depth
+   (PL_stack_sp - PL_stack_base), but we only really care about
+   our *own* recursion, not the overall Perl stack.
+*/
 
 #define _CROAK_IF_LOOKS_LIKE_INFINITE_RECURSION \
     dMY_CXT; \
-    if (MY_CXT.callback_depth > _MAX_CALLBACK_DEPTH) { \
-        croak("Exceeded %u callbacks; infinite recursion detected!", _MAX_CALLBACK_DEPTH); \
+    if (MY_CXT.callback_depth > _MAX_RECURSION) { \
+        croak("Exceeded %u callbacks; infinite recursion detected!", _MAX_RECURSION); \
     }
 
 typedef struct xspr_callback_s xspr_callback_t;

@@ -6,7 +6,7 @@ use warnings;
 our $VERSION;
 
 BEGIN {
-    $VERSION = '0.12_02';
+    $VERSION = '0.12';
 }
 
 =encoding utf-8
