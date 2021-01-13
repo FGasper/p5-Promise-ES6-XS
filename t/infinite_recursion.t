@@ -5,7 +5,6 @@ use warnings;
 
 use Test::More;
 use Test::Deep;
-use Test::Fatal;
 use Test::FailWarnings;
 
 use Promise::XS;
