@@ -64,8 +64,6 @@ package OnDestroy;
 sub new { return bless [ $_[1] ], $_[0] }
 
 sub DESTROY {
-    defined(${^GLOBAL_PHASE}) && print "DESTROYING at ${^GLOBAL_PHASE}$/";
-
     $_[0][0]->();
 }
 

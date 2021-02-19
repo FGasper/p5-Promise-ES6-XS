@@ -170,7 +170,6 @@ typedef struct {
 
 typedef struct {
     xspr_promise_t* promise;
-    SV* promise_sv;
 } DEFERRED_CLASS_TYPE;
 
 typedef struct {
@@ -1100,11 +1099,6 @@ create()
 
         deferred_ptr->promise = promise;
 
-        deferred_ptr->promise_sv = _promise_to_sv(aTHX_ promise);
-        //SvREFCNT_inc(deferred_ptr->promise_sv);
-    //warn("created promise sv");
-    //sv_dump(deferred_ptr->promise_sv);
-
         RETVAL = _ptr_to_svrv(aTHX_ deferred_ptr, MY_CXT.pxs_deferred_stash);
     OUTPUT:
         RETVAL
@@ -1155,12 +1149,7 @@ promise(SV* self_sv)
 
         xspr_promise_incref(aTHX_ self->promise);
 
-        SvREFCNT_inc(self->promise_sv);
-        //SvREFCNT_inc(SvRV(self->promise_sv));
-    //warn("returning promise");
-    //sv_dump(self->promise_sv);
-
-        RETVAL = self->promise_sv;
+        RETVAL = _promise_to_sv(aTHX_ self->promise);
     OUTPUT:
         RETVAL
 
@@ -1237,19 +1226,11 @@ clear_unhandled_rejection(SV *self_sv)
 void
 DESTROY(SV *self_sv)
     CODE:
-    fprintf(stderr, "DESTROYing deferred SV %p (phase=%d)", self_sv, PL_phase);
         DEFERRED_CLASS_TYPE* self = _get_deferred_from_sv(aTHX_ self_sv);
-    sv_dump(self->promise_sv);
-    fprintf(stderr, "promise refcount: %d\n", self->promise->refs);
 
         _warn_on_destroy_if_needed(aTHX_ self->promise, self_sv);
 
-        // SvREFCNT_dec(SvRV(self->promise_sv));
-    //warn("before SvREFCNT_dec(self->promise_sv)");
-        SvREFCNT_dec(self->promise_sv);
-    //warn("after SvREFCNT_dec(self->promise_sv)");
-
-        //xspr_promise_decref(aTHX_ self->promise);
+        xspr_promise_decref(aTHX_ self->promise);
         Safefree(self);
 
 # ----------------------------------------------------------------------
@@ -1308,16 +1289,12 @@ finally(SV* self_sv, SV* on_finally)
 void
 DESTROY(SV* self_sv)
     CODE:
-        //warn("DESTROYing promise SV %p (phase=%d)", self_sv, PL_phase);
-    //sv_dump(self_sv);
         PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
 
         _warn_on_destroy_if_needed(aTHX_ self->promise, self_sv);
 
-    //warn("before promise decref (%p)", self->promise);
         xspr_promise_decref(aTHX_ self->promise);
         Safefree(self);
-    //warn("after promise Safefree (%p)");
 
 # ----------------------------------------------------------------------
 # Future::AsyncAwait interface:
