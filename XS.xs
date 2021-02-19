@@ -171,7 +171,6 @@ typedef struct {
 
 typedef struct {
     xspr_promise_t* promise;
-    SV* promise_sv;
 } DEFERRED_CLASS_TYPE;
 
 typedef struct {
@@ -1112,9 +1111,6 @@ create()
         xspr_promise_t* promise = create_promise(aTHX);
 
         deferred_ptr->promise = promise;
-        deferred_ptr->promise_sv = _promise_to_sv(aTHX_ promise);
-
-        xspr_promise_incref(aTHX_ promise);
 
         RETVAL = _ptr_to_svrv(aTHX_ deferred_ptr, MY_CXT.pxs_deferred_stash);
     OUTPUT:
@@ -1164,11 +1160,9 @@ promise(SV* self_sv)
     CODE:
         DEFERRED_CLASS_TYPE* self = _get_deferred_from_sv(aTHX_ self_sv);
 
-        // xspr_promise_incref(aTHX_ self->promise);
+        xspr_promise_incref(aTHX_ self->promise);
 
-        SvREFCNT_inc(self->promise_sv);
-
-        RETVAL = self->promise_sv;
+        RETVAL = _promise_to_sv(aTHX_ self->promise);
     OUTPUT:
         RETVAL
 
@@ -1436,7 +1430,9 @@ AWAIT_IS_CANCELLED(...)
 void
 AWAIT_ON_READY(SV *self_sv, SV* coderef)
     CODE:
+        fprintf(stderr, "start AWAIT_ON_READY\n");
         PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
 
         self->promise->on_ready_immediate = coderef;
         SvREFCNT_inc(coderef);
+        fprintf(stderr, "end AWAIT_ON_READY\n");
