@@ -120,6 +120,7 @@ struct xspr_promise_s {
             xspr_result_t *result;
         } finished;
     };
+    SV* on_ready_immediate;
 };
 
 struct xspr_callback_queue_s {
@@ -170,6 +171,7 @@ typedef struct {
 
 typedef struct {
     xspr_promise_t* promise;
+    SV* promise_sv;
 } DEFERRED_CLASS_TYPE;
 
 typedef struct {
@@ -608,6 +610,13 @@ void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
     promise->finished.result = result;
     xspr_result_incref(aTHX_ promise->finished.result);
 
+    if (promise->on_ready_immediate && SvOK(promise->on_ready_immediate)) {
+        xspr_invoke_perl(aTHX_ promise->on_ready_immediate, NULL, 0);
+
+        SvREFCNT_dec(promise->on_ready_immediate);
+        promise->on_ready_immediate = NULL;
+    }
+
     unsigned i;
     for (i = 0; i < count; i++) {
 
@@ -694,6 +703,10 @@ void xspr_promise_decref(pTHX_ xspr_promise_t *promise)
             assert(0);
         }
 
+        if (promise->on_ready_immediate != NULL) {
+            SvREFCNT_dec(promise->on_ready_immediate);
+        }
+
         Safefree(promise);
     }
 }
@@ -705,6 +718,7 @@ xspr_promise_t* xspr_promise_new(pTHX)
     Newxz(promise, 1, xspr_promise_t);
     promise->refs = 1;
     promise->state = XSPR_STATE_PENDING;
+    promise->on_ready_immediate = NULL;
     return promise;
 }
 
@@ -1098,6 +1112,9 @@ create()
         xspr_promise_t* promise = create_promise(aTHX);
 
         deferred_ptr->promise = promise;
+        deferred_ptr->promise_sv = _promise_to_sv(aTHX_ promise);
+
+        xspr_promise_incref(aTHX_ promise);
 
         RETVAL = _ptr_to_svrv(aTHX_ deferred_ptr, MY_CXT.pxs_deferred_stash);
     OUTPUT:
@@ -1147,9 +1164,11 @@ promise(SV* self_sv)
     CODE:
         DEFERRED_CLASS_TYPE* self = _get_deferred_from_sv(aTHX_ self_sv);
 
-        xspr_promise_incref(aTHX_ self->promise);
+        // xspr_promise_incref(aTHX_ self->promise);
 
-        RETVAL = _promise_to_sv(aTHX_ self->promise);
+        SvREFCNT_inc(self->promise_sv);
+
+        RETVAL = self->promise_sv;
     OUTPUT:
         RETVAL
 
@@ -1419,5 +1438,5 @@ AWAIT_ON_READY(SV *self_sv, SV* coderef)
     CODE:
         PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
 
-        xspr_callback_t* callback = xspr_callback_new_finally(aTHX_ coderef, NULL);
-        xspr_promise_then(aTHX_ self->promise, callback);
+        self->promise->on_ready_immediate = coderef;
+        SvREFCNT_inc(coderef);
