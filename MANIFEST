@@ -20,6 +20,8 @@ t/anyevent.t
 t/aplus.t
 t/assets/deferred_leak.pl
 t/assets/promise_leak.pl
+t/async_await.t
+t/async_await_hold_ref.t
 t/detect_memory_leaks.t
 t/finally.t
 t/infinite_recursion.t

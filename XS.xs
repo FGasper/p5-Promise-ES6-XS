@@ -1412,13 +1412,15 @@ AWAIT_GET(SV *self_sv)
         int result_count = self->promise->finished.result->count;
 
         if (RESULT_IS_RESOLVED(self->promise->finished.result)) {
+            int i;
+
             switch (GIMME_V) {
                 if (!result_count) XSRETURN_EMPTY;
 
                 case G_ARRAY:
                     EXTEND(SP, result_count);
 
-                    for (int i=0; i<result_count; i++) {
+                    for (i=0; i<result_count; i++) {
                         PUSHs( sv_2mortal( newSVsv(results[i]) ) );
                     }
 
