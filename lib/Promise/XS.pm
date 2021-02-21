@@ -240,7 +240,6 @@ Windows. There may be a workaround possible, but none is implemented for now.
 use Exporter 'import';
 our @EXPORT_OK= qw/all collect deferred resolved rejected/;
 
-use Promise::XS::Loader ();
 use Promise::XS::Deferred ();
 use Promise::XS::Promise ();
 
@@ -255,6 +254,9 @@ use constant DEFERRAL_CR => {
 # convenience
 *deferred = *Promise::XS::Deferred::create;
 
+require XSLoader;
+XSLoader::load('Promise::XS', $VERSION);
+
 sub use_event {
     my ($name, @args) = @_;
 
@@ -265,6 +267,39 @@ sub use_event {
         die( __PACKAGE__ . ": unknown event engine: $name" );
     }
 }
+
+sub _convert_to_our_promise {
+    my $thenable = shift;
+    my $deferred= Promise::XS::Deferred::create();
+    my $called;
+
+    local $@;
+    eval {
+        $thenable->then(sub {
+            return if $called++;
+            $deferred->resolve(@_);
+        }, sub {
+            return if $called++;
+            $deferred->reject(@_);
+        });
+        1;
+    } or do {
+        my $error= $@;
+        if (!$called++) {
+            $deferred->reject($error);
+        }
+    };
+
+    # This promise is purely internal, so let’s not warn
+    # when its rejection is unhandled.
+    $deferred->clear_unhandled_rejection();
+
+    return $deferred->promise;
+}
+
+Promise::XS::Deferred::___set_conversion_helper(
+    \&_convert_to_our_promise,
+);
 
 #----------------------------------------------------------------------
 # Aggregator functions
