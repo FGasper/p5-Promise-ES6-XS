@@ -120,7 +120,10 @@ struct xspr_promise_s {
             xspr_result_t *result;
         } finished;
     };
+
+    /* For async/await: */
     SV* on_ready_immediate;
+    SV* self_sv_ref;
 };
 
 struct xspr_callback_queue_s {
@@ -596,6 +599,10 @@ void xspr_immediate_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* pro
     xspr_callback_free(aTHX_ callback);
 }
 
+#define _XSPR_FREE_ON_READY_IMMEDIATE(promise) \
+    SvREFCNT_dec(promise->on_ready_immediate); \
+    SvREFCNT_dec(SvRV(promise->on_ready_immediate));
+
 /* Transitions a promise from pending to finished, using the given result */
 void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
 {
@@ -609,10 +616,13 @@ void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
     promise->finished.result = result;
     xspr_result_incref(aTHX_ promise->finished.result);
 
-    if (promise->on_ready_immediate && SvOK(promise->on_ready_immediate)) {
+    /* fprintf(stderr, "finishing p=%p (%d callbacks)\n", promise, count); */
+
+    /* For async/await: */
+    if (promise->on_ready_immediate != NULL) {
         xspr_invoke_perl(aTHX_ promise->on_ready_immediate, NULL, 0);
 
-        SvREFCNT_dec(promise->on_ready_immediate);
+        _XSPR_FREE_ON_READY_IMMEDIATE(promise);
         promise->on_ready_immediate = NULL;
     }
 
@@ -634,6 +644,12 @@ void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
         else {
             xspr_immediate_process(aTHX_ pending_callbacks[i], promise);
         }
+    }
+
+    if (promise->self_sv_ref != NULL) {
+        SvREFCNT_dec(promise->self_sv_ref);
+        SvREFCNT_dec(SvRV(promise->self_sv_ref));
+        promise->self_sv_ref = NULL;
     }
 
     if (MY_CXT.deferral_cr) {
@@ -703,7 +719,7 @@ void xspr_promise_decref(pTHX_ xspr_promise_t *promise)
         }
 
         if (promise->on_ready_immediate != NULL) {
-            SvREFCNT_dec(promise->on_ready_immediate);
+            _XSPR_FREE_ON_READY_IMMEDIATE(promise);
         }
 
         Safefree(promise);
@@ -718,6 +734,7 @@ xspr_promise_t* xspr_promise_new(pTHX)
     promise->refs = 1;
     promise->state = XSPR_STATE_PENDING;
     promise->on_ready_immediate = NULL;
+    promise->self_sv_ref = NULL;
     return promise;
 }
 
@@ -980,20 +997,40 @@ SV* _promise_to_sv(pTHX_ xspr_promise_t* promise_p) {
     return _ptr_to_svrv(aTHX_ promise_ptr, MY_CXT.pxs_promise_stash);
 }
 
-static inline SV* _create_preresolved_promise(pTHX_ SV** args, I32 argslen) {
+/* When Future::AsyncAwait creates a promise/future it does NOT
+   hold a strong reference to that object. Consequently, we have to
+   ensure that the object lasts until we’re done with it. So introduce
+   a (temporary!) circular reference. */
+#define _IMMORTALIZE_PROMISE_SV(promise_sv, promise_p) \
+    do { \
+        /* fprintf(stderr, "making immortal: sv=%p p=%p\n", promise_sv, promise_p); */ \
+        promise_p->self_sv_ref = promise_sv; \
+        SvREFCNT_inc(promise_sv); \
+        SvREFCNT_inc(SvRV(promise_sv)); \
+    } while (0)
+
+static inline SV* _create_preresolved_promise(pTHX_ SV** args, I32 argslen, bool immortalize) {
     xspr_promise_t* promise_p = create_promise(aTHX);
 
     _resolve_promise(aTHX_ promise_p, args, argslen);
 
-    return _promise_to_sv(aTHX_ promise_p);
+    SV* promise_sv = _promise_to_sv(aTHX_ promise_p);
+
+    if (immortalize) _IMMORTALIZE_PROMISE_SV(promise_sv, promise_p);
+
+    return promise_sv;
 }
 
-static inline SV* _create_prerejected_promise(pTHX_ SV** args, I32 argslen) {
+static inline SV* _create_prerejected_promise(pTHX_ SV** args, I32 argslen, bool immortalize) {
     xspr_promise_t* promise_p = create_promise(aTHX);
 
     _reject_promise(aTHX_ NULL, promise_p, args, argslen);
 
-    return _promise_to_sv(aTHX_ promise_p);
+    SV* promise_sv = _promise_to_sv(aTHX_ promise_p);
+
+    if (immortalize) _IMMORTALIZE_PROMISE_SV(promise_sv, promise_p);
+
+    return promise_sv;
 }
 
 //----------------------------------------------------------------------
@@ -1083,14 +1120,14 @@ CLONE(...)
 SV *
 resolved(...)
     CODE:
-        RETVAL = _create_preresolved_promise(aTHX_ &(ST(0)), items);
+        RETVAL = _create_preresolved_promise(aTHX_ &(ST(0)), items, false);
     OUTPUT:
         RETVAL
 
 SV *
 rejected(...)
     CODE:
-        RETVAL = _create_prerejected_promise(aTHX_ &(ST(0)), items);
+        RETVAL = _create_prerejected_promise(aTHX_ &(ST(0)), items, false);
     OUTPUT:
         RETVAL
 
@@ -1303,6 +1340,7 @@ void
 DESTROY(SV* self_sv)
     CODE:
         PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
+        /* fprintf(stderr, "DESTROYing sv=%p, p=%p\n", self_sv, self->promise); */
 
         _warn_on_destroy_if_needed(aTHX_ self->promise, self_sv);
 
@@ -1314,29 +1352,31 @@ DESTROY(SV* self_sv)
 # ----------------------------------------------------------------------
 
 SV*
-AWAIT_NEW_DONE(const char* class, ...)
+AWAIT_NEW_DONE(...)
     CODE:
-        // TODO: handle class/subclassing
-        RETVAL = _create_preresolved_promise(aTHX_ &(ST(1)), items - 1);
+        UNUSED(items);
+        RETVAL = _create_preresolved_promise(aTHX_ &(ST(1)), items - 1, true);
     OUTPUT:
         RETVAL
 
 SV*
-AWAIT_NEW_FAIL(const char* class, ...)
+AWAIT_NEW_FAIL(...)
     CODE:
-        // TODO: handle class/subclassing
-        RETVAL = _create_prerejected_promise(aTHX_ &(ST(1)), items - 1);
+        UNUSED(items);
+        RETVAL = _create_prerejected_promise(aTHX_ &(ST(1)), items - 1, true);
     OUTPUT:
         RETVAL
 
 SV*
-AWAIT_CLONE(SV* old)
+AWAIT_CLONE(...)
     CODE:
+        UNUSED(items);
+
         xspr_promise_t* promise_p = create_promise(aTHX);
 
-        // TODO: handle class/subclassing
-
         RETVAL = _promise_to_sv(aTHX_ promise_p);
+
+        _IMMORTALIZE_PROMISE_SV(RETVAL, promise_p);
     OUTPUT:
         RETVAL
 
@@ -1355,7 +1395,7 @@ AWAIT_FAIL(SV* self_sv, ...)
 bool
 AWAIT_IS_READY(SV *self_sv)
     CODE:
-        DEFERRED_CLASS_TYPE* self = _get_deferred_from_sv(aTHX_ self_sv);
+        PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
 
         RETVAL = (self->promise->state != XSPR_STATE_PENDING);
     OUTPUT:
@@ -1379,7 +1419,6 @@ AWAIT_GET(SV *self_sv)
                     EXTEND(SP, result_count);
 
                     for (int i=0; i<result_count; i++) {
-sv_dump(results[i]);
                         PUSHs( sv_2mortal( newSVsv(results[i]) ) );
                     }
 
@@ -1430,9 +1469,8 @@ AWAIT_IS_CANCELLED(...)
 void
 AWAIT_ON_READY(SV *self_sv, SV* coderef)
     CODE:
-        fprintf(stderr, "start AWAIT_ON_READY\n");
         PROMISE_CLASS_TYPE* self = _get_promise_from_sv(aTHX_ self_sv);
 
         self->promise->on_ready_immediate = coderef;
         SvREFCNT_inc(coderef);
-        fprintf(stderr, "end AWAIT_ON_READY\n");
+        SvREFCNT_inc(SvRV(coderef));

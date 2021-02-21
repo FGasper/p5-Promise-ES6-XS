@@ -147,6 +147,29 @@ C<$new> is rejected with the relevant value(s).
 
 =back
 
+=head1 B<EXPERIMENTAL:> ASYNC/AWAIT SUPPORT
+
+This module implements L<Future::AsyncAwait::Awaitable>.
+Once you load L<Future::AsyncAwait> this lets you do nifty stuff like:
+
+    use Future::AsyncAwait future_class => 'Promise::XS::Promise';
+
+    async sub do_stuff {
+        return 1 + await fetch_number_p();
+    }
+
+    my $one_plus_number = await do_stuff();
+
+… which roughly equates to:
+
+    sub do_stuff {
+        return fetch_number_p()->then( sub { 1 + $foo } );
+    }
+
+    do_stuff->then( sub {
+        $one_plus_number = shift;
+    } );
+
 =head1 EVENT LOOPS
 
 By default this library uses no event loop. This is a generally usable
