@@ -22,6 +22,7 @@ before_install:
     - "cpanm --notest AnyEvent ||:"
     - "cpanm --notest IO::Async ||:"
     - "cpanm --notest Mojolicious ||:"
+    - "cpanm --notest Future::AsyncAwait ||:"
     - cpanm --notest --installdeps .
 
 jobs:
