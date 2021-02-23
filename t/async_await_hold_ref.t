@@ -12,6 +12,10 @@ BEGIN {
     }
 }
 
+eval { Future::AsyncAwait->VERSION(0.47) } or do {
+    plan skip_all => "Future::AsyncAwait ($Future::AsyncAwait::VERSION) is too old.";
+};
+
 use Promise::XS;
 
 use Future::AsyncAwait future_class => 'Promise::XS::Promise';
