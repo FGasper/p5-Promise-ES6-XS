@@ -19,7 +19,7 @@ BEGIN {
 if (!$failed_why) {
     my $backend;
 
-    my @backends = ('AnyEvent', 'IO::Async', 'Mojolicious');
+    my @backends = ('AnyEvent', 'IO::Async', 'Mojo::IOLoop');
 
     for my $try (@backends) {
         if (eval "require $try") {
