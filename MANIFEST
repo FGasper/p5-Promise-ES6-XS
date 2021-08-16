@@ -14,6 +14,7 @@ lib/Promise/XS/Deferred.pm
 lib/Promise/XS/Promise.pm
 ppport.h
 t/XSPromises.t
+t/abandon.t
 t/alias.t
 t/anyevent.t
 t/aplus.t
