@@ -268,6 +268,7 @@ sub use_event {
     }
 }
 
+# called from XS
 sub _convert_to_our_promise {
     my $thenable = shift;
     my $deferred= Promise::XS::Deferred::create();
@@ -296,10 +297,6 @@ sub _convert_to_our_promise {
 
     return $deferred->promise;
 }
-
-Promise::XS::Deferred::___set_conversion_helper(
-    \&_convert_to_our_promise,
-);
 
 #----------------------------------------------------------------------
 # Aggregator functions
