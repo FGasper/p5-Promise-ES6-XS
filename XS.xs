@@ -841,7 +841,8 @@ xspr_promise_t* xspr_promise_from_sv(pTHX_ SV* input)
         CV* converter_cv = get_cv(BASE_CLASS "::" CONVERTER_CR_NAME, 0);
         if (!converter_cv) croak("Need " CONVERTER_CR_NAME "!");
 
-        SV* converter_svcv = newRV_noinc((SV*) converter_cv);
+        SV* converter_svcv = newRV_inc((SV*) converter_cv);
+        sv_2mortal(converter_svcv);
 
         xspr_result_t* new_result = xspr_invoke_perl(aTHX_ converter_svcv, &input, 1);
         if (new_result->state == XSPR_RESULT_RESOLVED &&
