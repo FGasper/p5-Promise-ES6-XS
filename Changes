@@ -1,5 +1,9 @@
 Revision history for Perl extension Promise::XS:
 
+0.15
+- Hard-code the name of the converter sub in XS. This improves compatibility
+  with perlcc.
+
 0.14 Wed 24 Feb 2021
 - Fix hold-ref test’s skip logic for old Future::AsyncAwait versions.
 
