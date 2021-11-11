@@ -25,7 +25,7 @@ jobs:
         uses: egor-tensin/setup-cygwin@v3
         with:
             platform: x64
-            packages: perl_base make perl-ExtUtils-MakeMaker bash
+            packages: perl_base make gcc-g++ bash
       - uses: actions/checkout@v2
       - run: perl -V
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
@@ -34,12 +34,13 @@ jobs:
       - name: Install Dependencies
         run: cd $GITHUB_WORKSPACE; cpanm --verbose --notest --installdeps .
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+      - run: chdir $GITHUB_WORKSPACE
       - name: perl Makefile.PL
         run: cd $GITHUB_WORKSPACE; perl Makefile.PL
-        shell: C:\tools\cygwin\bin\bash.exe --norc -eo pipefail -o igncr '{0}'
+        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
       - name: make
         run: cd $GITHUB_WORKSPACE; make
-        shell: C:\tools\cygwin\bin\bash.exe --norc -eo pipefail -o igncr '{0}'
-      - name:
+        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+      - name: make test
         run: cd $GITHUB_WORKSPACE; make test
-        shell: C:\tools\cygwin\bin\bash.exe --norc -eo pipefail -o igncr '{0}'
+        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
