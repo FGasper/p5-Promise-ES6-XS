@@ -25,7 +25,7 @@ jobs:
         uses: egor-tensin/setup-cygwin@v3
         with:
             platform: x64
-            packages: perl_base perl-ExtUtils-MakeMaker make gcc-g++ libcrypt-devel libsnl libnsl2 bash
+            packages: perl_base perl-ExtUtils-MakeMaker make gcc-g++ libcrypt-devel libnsl libnsl-devel libnsl2 bash
       - uses: actions/checkout@v2
       - run: perl -V
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
