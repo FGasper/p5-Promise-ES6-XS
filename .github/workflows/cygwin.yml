@@ -32,15 +32,14 @@ jobs:
       - run: cpan App::cpanminus
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
       - name: Install Dependencies
-        run: cpanm --verbose --notest --installdeps $GITHUB_WORKSPACE
+        run: cd $GITHUB_WORKSPACE; cpanm --verbose --notest --installdeps .
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
-      - run: chdir $GITHUB_WORKSPACE
       - name: perl Makefile.PL
-        run: perl Makefile.PL
+        run: cd $GITHUB_WORKSPACE; perl Makefile.PL
         shell: C:\tools\cygwin\bin\bash.exe --norc -eo pipefail -o igncr '{0}'
       - name: make
-        run: make
+        run: cd $GITHUB_WORKSPACE; make
         shell: C:\tools\cygwin\bin\bash.exe --norc -eo pipefail -o igncr '{0}'
       - name:
-        run: make test
+        run: cd $GITHUB_WORKSPACE; make test
         shell: C:\tools\cygwin\bin\bash.exe --norc -eo pipefail -o igncr '{0}'
