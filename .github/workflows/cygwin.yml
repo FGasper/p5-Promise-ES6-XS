@@ -25,13 +25,14 @@ jobs:
         uses: egor-tensin/setup-cygwin@v3
         with:
             platform: x64
-            packages: cmake gcc-g++
+            packages: perl bash
       - uses: actions/checkout@v2
+      - run: ls.exe -Al
       - name: perl -V
         run: perl -V
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
       - name: Install Dependencies
-        run: curl -L https://cpanmin.us | perl - --notest --installdeps .
+        run: curl -L https://cpanmin.us | perl - --verbose --notest --installdeps .
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
       - name: perl Makefile.PL
         run: perl Makefile.PL
