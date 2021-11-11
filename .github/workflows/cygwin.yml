@@ -31,18 +31,16 @@ jobs:
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
       - run: cpan App::cpanminus
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
-      - run: chdir $GITHUB_WORKSPACE
-      - run: pwd
-        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
       - name: Install Dependencies
-        run: cpanm --verbose --notest --installdeps .
+        run: cpanm --verbose --notest --installdeps $GITHUB_WORKSPACE
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+      - run: chdir $GITHUB_WORKSPACE
       - name: perl Makefile.PL
         run: perl Makefile.PL
-        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+        shell: C:\tools\cygwin\bin\bash.exe --norc -eo pipefail -o igncr '{0}'
       - name: make
         run: make
-        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+        shell: C:\tools\cygwin\bin\bash.exe --norc -eo pipefail -o igncr '{0}'
       - name:
         run: make test
-        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+        shell: C:\tools\cygwin\bin\bash.exe --norc -eo pipefail -o igncr '{0}'
