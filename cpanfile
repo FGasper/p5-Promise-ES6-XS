@@ -7,5 +7,5 @@ test_requires 'File::Temp', 0;
 
 author_requires 'AnyEvent';
 author_requires 'IO::Async';
-author_requires 'Mojolicious';
-author_requires 'Future::AsyncAwait';
+$^V ge v5.16.0 && author_requires 'Mojolicious';
+$^V ge v5.16.0 && author_requires 'Future::AsyncAwait';

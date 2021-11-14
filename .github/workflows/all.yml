@@ -42,20 +42,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: perl -V
         run: perl -V
-
-      # Testing pre-5.16 perls necessitates writing these out
-      # explicitly:
-      - name: Install AnyEvent (optional)
-        run: "cpanm --notest AnyEvent ||:"
-      - name: Install IO::Async (optional)
-        run: "cpanm --notest IO::Async ||:"
-      - name: Install Mojolicious (optional)
-        run: "cpanm --notest Mojolicious ||:"
-      - name: Install Future::AsyncAwait (optional)
-        run: "cpanm --notest Future::AsyncAwait ||:"
-
       - name: Install Dependencies
-        run: cpanm --notest --installdeps --with-configure .
+        run: cpanm --notest --installdeps --with-configure --with-develop .
       - name: perl Makefile.PL
         run: perl Makefile.PL
       - name: make
