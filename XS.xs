@@ -1,9 +1,4 @@
-#define PERL_NO_GET_CONTEXT
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-
-#include "ppport.h"
+#include "fg_std_xs.h"
 
 #include <stdbool.h>
 #include <unistd.h>
