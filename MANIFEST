@@ -6,6 +6,10 @@ Makefile.PL
 README.md
 XS.xs
 cpanfile
+easyxs/LICENSE
+easyxs/README.md
+easyxs/init.h
+easyxs/ppport.h
 fg_std_xs.h
 lib/Promise/XS.pm
 lib/Promise/XS/Deferred.pm
@@ -31,7 +35,3 @@ t/reject_undef.t
 t/subclass.t
 t/sync.t
 t/unhandled_rejection.t
-xseasy/LICENSE
-xseasy/README.md
-xseasy/init.h
-xseasy/ppport.h
