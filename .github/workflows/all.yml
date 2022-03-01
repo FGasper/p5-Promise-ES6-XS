@@ -40,6 +40,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - run: git submodule init
       - name: perl -V
         run: perl -V
       - name: Install Dependencies
@@ -56,6 +57,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - run: git submodule init
       - name: Set up Perl
         run: brew install perl
       - name: perl -V
@@ -78,6 +80,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - run: git submodule init
       - name: Set up Perl
         run: |
           choco install strawberryperl
@@ -106,6 +109,8 @@ jobs:
             platform: x64
             packages: perl_base perl-ExtUtils-MakeMaker make gcc-g++ libcrypt-devel libnsl-devel bash
       - uses: actions/checkout@v2
+      - run: git submodule init
+        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
       - run: perl -V
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
       - run: cpan App::cpanminus
