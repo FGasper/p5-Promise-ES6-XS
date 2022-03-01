@@ -109,7 +109,7 @@ jobs:
             platform: x64
             packages: perl_base perl-ExtUtils-MakeMaker make gcc-g++ libcrypt-devel libnsl-devel bash
       - uses: actions/checkout@v2
-      - run: git submodule init && git submodule update
+      - run: cd $GITHUB_WORKSPACE; git submodule init && git submodule update
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
       - run: perl -V
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
