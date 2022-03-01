@@ -1,5 +1,3 @@
-.github/workflows/all.yml
-.gitignore
 .travis.yml
 Changes
 LICENSE
@@ -12,7 +10,6 @@ fg_std_xs.h
 lib/Promise/XS.pm
 lib/Promise/XS/Deferred.pm
 lib/Promise/XS/Promise.pm
-ppport.h
 t/XSPromises.t
 t/alias.t
 t/anyevent.t
@@ -34,3 +31,7 @@ t/reject_undef.t
 t/subclass.t
 t/sync.t
 t/unhandled_rejection.t
+xseasy/LICENSE
+xseasy/README.md
+xseasy/init.h
+xseasy/ppport.h

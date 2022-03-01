@@ -1,4 +1,4 @@
-#include "fg_std_xs.h"
+#include "xseasy/init.h"
 
 #include <stdbool.h>
 #include <unistd.h>
