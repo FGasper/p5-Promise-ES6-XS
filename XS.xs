@@ -1238,6 +1238,11 @@ I32
 _SHOW_STACK(const char* msg=__func__)
     PREINIT:
         PerlIO_printf(Perl_debug_log, "%s PREINIT TOPMARK=%d\n", __func__, (int) TOPMARK);
+        PerlIO_printf(Perl_debug_log, "MARK STACK=");
+        I32 *mp = PL_markstack;
+        while (mp != PL_markstack_max) PerlIO_printf(Perl_debug_log, "%d,", *mp++);
+        PerlIO_printf(Perl_debug_log, "(END)\n");
+
     CODE:
         PerlIO_printf(Perl_debug_log, "CODE TOPMARK=%d\n", (int) TOPMARK);
         MY_debug_showstack(msg);
