@@ -18,10 +18,10 @@ printf "TOPMARK b: %d\n", Promise::XS::_TOPMARK();
 
 my $failed_why;
 printf "TOPMARK c: %d\n", Promise::XS::_TOPMARK();
-#
-#BEGIN {
-#    eval 'use AnyEvent; 1' or $failed_why = $@;
-#}
+
+BEGIN {
+    eval 'use AnyEvent; 1' or $failed_why = $@;
+}
 
 #plan skip_all => "Can’t run test: $failed_why" if $failed_why;
 #
