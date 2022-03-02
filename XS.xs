@@ -1278,7 +1278,7 @@ ___set_deferral_generic(SV* deferral_cr, SV* deferral_arg, UV event_system, SV* 
     CODE:
         dMY_CXT;
 
-        deferral_cr = SvRV(deferral_cr);
+        // deferral_cr = SvRV(deferral_cr);
 
         if (MY_CXT.deferral_cr) {
             SvREFCNT_dec(MY_CXT.deferral_cr);
@@ -1292,12 +1292,10 @@ ___set_deferral_generic(SV* deferral_cr, SV* deferral_arg, UV event_system, SV* 
             SvREFCNT_dec(MY_CXT.stop_cr);
         }
 
-        MY_CXT.deferral_cr = deferral_cr;
-        SvREFCNT_inc(MY_CXT.deferral_cr);
+        MY_CXT.deferral_cr = SvREFCNT_inc(deferral_cr);
 
-        if (deferral_arg) {
-            MY_CXT.deferral_arg = deferral_arg;
-            SvREFCNT_inc(MY_CXT.deferral_arg);
+        if (deferral_arg && SvOK(deferral_arg)) {
+            MY_CXT.deferral_arg = SvREFCNT_inc(deferral_arg);
         }
 
         MY_CXT.event_system = event_system;
