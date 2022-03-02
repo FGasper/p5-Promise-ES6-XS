@@ -1178,6 +1178,11 @@ _TOPMARK()
     OUTPUT:
         RETVAL
 
+void
+_SHOW_STACK()
+    CODE:
+        exs_debug_showstack(__func__);
+
 # In some old thread-multi perls sv_dup_inc() wasn’t defined.
 
 #if defined(USE_ITHREADS) && defined(sv_dup_inc)

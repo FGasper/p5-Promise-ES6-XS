@@ -17,6 +17,8 @@ sub test_success {
 
     my @timer_state = shift->($d);
 
+    Promise::XS::_SHOW_STACK();
+
     my @got = $d->promise()->AWAIT_WAIT();
 
     is( "@got", "42 34", 'top-level await: success' );
