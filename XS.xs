@@ -958,7 +958,7 @@ static inline void _warn_weird_reject_if_needed( pTHX_ SV* self_sv, const char* 
         warn( "%s: Empty call to %s()", pkgname, funcname );
     }
     else {
-        warn( "%s: %s() called with only uninitialized values (%d)", pkgname, funcname, my_items);
+        warn( "%s: %s() called with only uninitialized values (%" IVdf ")", pkgname, funcname, (IV) my_items);
     }
 }
 
