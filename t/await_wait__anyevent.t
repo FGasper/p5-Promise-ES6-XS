@@ -26,6 +26,8 @@ my $t = AnyEvent->timer(
 );
 
 my @got = $d->promise()->AWAIT_WAIT();
+use Devel::Peek;
+Dump @got;
 
 is( "@got", "42 34", 'top-level await: success' );
 
