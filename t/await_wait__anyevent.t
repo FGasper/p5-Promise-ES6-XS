@@ -1,22 +1,36 @@
 #!/usr/bin/env perl
 
-#use strict;
-#use warnings;
+use strict;
+use warnings;
+
+use Test::More;
+use Test::FailWarnings;
 
 use Promise::XS;
 
+use FindBin;
+use lib "$FindBin::Bin/lib";
+use AwaitWait;
+
+my $failed_why;
+
 BEGIN {
-    Promise::XS::_SHOW_STACK("BEGIN");
+    eval 'use AnyEvent; 1' or $failed_why = $@;
 }
 
-Promise::XS::_SHOW_STACK("RUN");
+plan skip_all => "Can’t run test: $failed_why" if $failed_why;
 
-my $d = Promise::XS::deferred();
+#AwaitWait::skip_if_bad_topmark();
 
-$d->promise()->then(sub {
-    Promise::XS::_SHOW_STACK("in callback");
-});
+Promise::XS::use_event('AnyEvent');
 
-$d->resolve(888);
+AwaitWait::test_success(
+    sub {
+        my $d = shift;
+        AnyEvent->timer(
+            after => 0.1, cb => sub { $d->resolve(42, 34) },
+        );
+    },
+);
 
-print "ok 1\n1..1\n";
+done_testing;
