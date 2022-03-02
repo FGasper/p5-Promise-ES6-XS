@@ -97,7 +97,7 @@ jobs:
       - name: make
         run: make
       - name: Run Tests
-        run: make test
+        run: prove -wlvmb t
 
   cygwin:
     runs-on: windows-latest
