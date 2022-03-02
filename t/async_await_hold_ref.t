@@ -14,6 +14,8 @@ if ($^V ge v5.16.0 && $^V le v5.25.0) {
 
 printf "TOPMARK b: %d\n", Promise::XS::_TOPMARK();
 
+use Promise::XS;
+
 BEGIN {
 printf "TOPMARK c: %d\n", Promise::XS::_TOPMARK();
     for my $req ( qw( Future::AsyncAwait  AnyEvent ) ) {
@@ -25,8 +27,6 @@ printf "TOPMARK c: %d\n", Promise::XS::_TOPMARK();
     };
 printf "TOPMARK d: %d\n", Promise::XS::_TOPMARK();
 }
-
-use Promise::XS;
 
 use Future::AsyncAwait future_class => 'Promise::XS::Promise';
 
