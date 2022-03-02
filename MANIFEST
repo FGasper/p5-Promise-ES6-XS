@@ -33,6 +33,7 @@ t/detect_memory_leaks.t
 t/finally.t
 t/infinite_recursion.t
 t/ioasync.t
+t/lib/AwaitWait.pm
 t/mojo.t
 t/multi_return.t
 t/no_leak_stashed_ref.t
