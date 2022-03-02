@@ -1149,7 +1149,7 @@ static void _mojo_wait_promise(pTHX_ SV* promise_sv, SV* stop_cr) {
 static inline void MY_S_debug_showstack(pTHX_ const char *pattern, ...)
 {
   SV **sp;
-  PerlIO_printf(Perl_debug_log, "INIT TOPMARK=%d", (int) TOPMARK);
+  PerlIO_printf(Perl_debug_log, "INIT TOPMARK=%d\n", (int) TOPMARK);
 
   va_list ap;
   va_start(ap, pattern);

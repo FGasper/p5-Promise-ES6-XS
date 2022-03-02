@@ -25,13 +25,13 @@ BEGIN {
 
 plan skip_all => "Can’t run test: $failed_why" if $failed_why;
 
-diag "topmark bad? " . _topmark_is_bad();
+diag "topmark: " . Promise::XS::_TOPMARK();
 
 Promise::XS::use_event('AnyEvent');
 
-diag "topmark bad? " . _topmark_is_bad();
+diag "topmark: " . Promise::XS::_TOPMARK();
 Promise::XS::_SHOW_STACK();
-diag "topmark bad? " . _topmark_is_bad();
+diag "topmark: " . Promise::XS::_TOPMARK();
 
 AwaitWait::test_success(
     sub {
