@@ -7,6 +7,10 @@ use Test::More;
 
 use Promise::XS;
 
+BEGIN {
+    Promise::XS::PRINT_TOPMARK();
+}
+
 Promise::XS::PRINT_TOPMARK();
 
 use Test::FailWarnings;
