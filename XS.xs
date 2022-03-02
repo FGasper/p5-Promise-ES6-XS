@@ -1186,7 +1186,7 @@ static inline void MY_S_debug_showstack(pTHX_ const char *pattern, ...)
 void static inline _MY_print_mark_stack(pTHX) {
     PerlIO_printf(Perl_debug_log, "MARK STACK=");
     I32 *mp = PL_markstack;
-    while (mp != PL_markstack_max) PerlIO_printf(Perl_debug_log, "%d,", *mp++);
+    while (mp != PL_markstack_max) PerlIO_printf(Perl_debug_log, mp == PL_markstack_ptr ? "[%d]," : "%d,", *mp++);
     PerlIO_printf(Perl_debug_log, "(END)\n");
 }
 
@@ -1221,7 +1221,7 @@ BOOT:
 I32
 _TOPMARK()
     PREINIT:
-        PerlIO_printf(Perl_debug_log, "%s PREINIT TOPMARK=%d\n", __func__, (int) TOPMARK);
+        PerlIO_printf(Perl_debug_log, "%s\n", __func__);
         _MY_print_mark_stack(aTHX);
     CODE:
         MY_debug_showstack(__func__);
@@ -1233,7 +1233,7 @@ _TOPMARK()
 I32
 _SHOW_STACK_NOARG()
     PREINIT:
-        PerlIO_printf(Perl_debug_log, "%s PREINIT TOPMARK=%d\n", __func__, (int) TOPMARK);
+        PerlIO_printf(Perl_debug_log, "%s\n", __func__);
         _MY_print_mark_stack(aTHX);
     CODE:
         PerlIO_printf(Perl_debug_log, "CODE TOPMARK=%d\n", (int) TOPMARK);
@@ -1246,7 +1246,7 @@ _SHOW_STACK_NOARG()
 I32
 _SHOW_STACK(const char* msg=__func__)
     PREINIT:
-        PerlIO_printf(Perl_debug_log, "%s PREINIT TOPMARK=%d\n", __func__, (int) TOPMARK);
+        PerlIO_printf(Perl_debug_log, "%s\n", __func__);
         _MY_print_mark_stack(aTHX);
 
     CODE:
