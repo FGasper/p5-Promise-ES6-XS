@@ -1240,7 +1240,7 @@ _SHOW_STACK(const char* msg=__func__)
         PerlIO_printf(Perl_debug_log, "%s PREINIT TOPMARK=%d\n", __func__, (int) TOPMARK);
     CODE:
         PerlIO_printf(Perl_debug_log, "CODE TOPMARK=%d\n", (int) TOPMARK);
-        //MY_debug_showstack(msg);
+        MY_debug_showstack(msg);
         RETVAL = newSViv(0);
 
     OUTPUT:
