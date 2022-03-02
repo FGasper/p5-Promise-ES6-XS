@@ -1221,13 +1221,17 @@ _TOPMARK()
     OUTPUT:
         RETVAL
 
-void
+I32
 _SHOW_STACK(const char* msg=__func__)
     PREINIT:
         PerlIO_printf(Perl_debug_log, "%s PREINIT TOPMARK=%d\n", __func__, (int) TOPMARK);
     CODE:
         PerlIO_printf(Perl_debug_log, "CODE TOPMARK=%d\n", (int) TOPMARK);
         //MY_debug_showstack(msg);
+        RETVAL = newSViv(0);
+
+    OUTPUT:
+        RETVAL
 
 # In some old thread-multi perls sv_dup_inc() wasn’t defined.
 
