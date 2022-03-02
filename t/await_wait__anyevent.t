@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use Test::FailWarnings -allow_deps => 1;
+#use Test::FailWarnings -allow_deps => 1;
 
 diag sprintf "TOPMARK a: %d\n", Promise::XS::_TOPMARK();
 
@@ -21,7 +21,7 @@ BEGIN {
 
 plan skip_all => "Can’t run test: $failed_why" if $failed_why;
 
-skip_if_bad_topmark();
+diag "topmark bad? " . _topmark_is_bad();
 #
 #Promise::XS::use_event('AnyEvent');
 #
@@ -40,10 +40,8 @@ done_testing;
 
 # ----------------------------------------------------------------------
 
-sub skip_if_bad_topmark {
+sub _topmark_is_bad {
     my $tm = Promise::XS::_TOPMARK();
 
-    if ($tm != 0) {
-        plan skip_all => "TOPMARK is $tm, expected 0; skipping test …";
-    }
+    return ($tm != 0);
 }
