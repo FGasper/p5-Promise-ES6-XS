@@ -1179,9 +1179,9 @@ _TOPMARK()
         RETVAL
 
 void
-_SHOW_STACK()
+_SHOW_STACK(const char* msg=__func__)
     CODE:
-        exs_debug_showstack(__func__);
+        exs_debug_showstack(msg);
 
 # In some old thread-multi perls sv_dup_inc() wasn’t defined.
 
