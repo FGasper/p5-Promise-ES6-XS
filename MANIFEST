@@ -9,6 +9,7 @@ cpanfile
 easyxs/LICENSE
 easyxs/README.md
 easyxs/easyxs.h
+easyxs/easyxs_debug.h
 easyxs/easyxs_numeric.h
 easyxs/easyxs_perlcall.h
 easyxs/easyxs_string.h
