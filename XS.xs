@@ -1187,10 +1187,10 @@ void static inline _MY_print_mark_stack(pTHX) {
     PerlIO_printf(Perl_debug_log, "MARK STACK (start=%p; cur=%p, offset=%d):\n", PL_markstack, PL_markstack_ptr, (int) (PL_markstack_ptr - PL_markstack));
     I32 *mp = PL_markstack;
     while (mp != PL_markstack_max) {
-        const char* pattern = (mp == PL_markstack_ptr ? "[%d]," : "%d,");
+        const char* pattern = (mp == PL_markstack_ptr ? "[%d]" : "%d");
         PerlIO_printf(Perl_debug_log, pattern, *mp++);
+        PerlIO_printf(Perl_debug_log, (mp == PL_markstack_max) ? "\n" : ",");
     }
-    PerlIO_printf(Perl_debug_log, "(END)\n");
 }
 
 //----------------------------------------------------------------------
@@ -1246,19 +1246,12 @@ _SHOW_STACK_NOARG()
     OUTPUT:
         RETVAL
 
-I32
+void
 _SHOW_STACK(const char* msg=__func__)
-    PREINIT:
-        PerlIO_printf(Perl_debug_log, "%s\n", __func__);
-        _MY_print_mark_stack(aTHX);
-
     CODE:
-        PerlIO_printf(Perl_debug_log, "CODE TOPMARK=%d\n", (int) TOPMARK);
-        MY_debug_showstack(msg);
-        RETVAL = newSViv(0);
-
-    OUTPUT:
-        RETVAL
+        PerlIO_printf(Perl_debug_log, "showing stack (%s)\n", msg);
+        _MY_print_mark_stack(aTHX);
+        exs_debug_showstack(msg);
 
 # In some old thread-multi perls sv_dup_inc() wasn’t defined.
 
@@ -1704,6 +1697,8 @@ AWAIT_WAIT(SV* self_sv)
             default:
                 croak(BASE_CLASS ": No event loop set up! Did you forget to call use_event()?");
         }
+
+        PUSHMARK(SP);
 
         int count = call_method("AWAIT_GET", GIMME_V);
         XSRETURN(count);
