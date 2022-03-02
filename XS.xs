@@ -1184,9 +1184,12 @@ static inline void MY_S_debug_showstack(pTHX_ const char *pattern, ...)
 #endif
 
 void static inline _MY_print_mark_stack(pTHX) {
-    PerlIO_printf(Perl_debug_log, "MARK STACK=");
+    PerlIO_printf(Perl_debug_log, "MARK STACK (start=%p; cur=%p, offset=%d):\n", PL_markstack, PL_markstack_ptr, (int) (PL_markstack_ptr - PL_markstack));
     I32 *mp = PL_markstack;
-    while (mp != PL_markstack_max) PerlIO_printf(Perl_debug_log, mp == PL_markstack_ptr ? "[%d]," : "%d,", *mp++);
+    while (mp != PL_markstack_max) {
+        const char* pattern = (mp == PL_markstack_ptr ? "[%d]," : "%d,");
+        PerlIO_printf(Perl_debug_log, pattern, *mp++);
+    }
     PerlIO_printf(Perl_debug_log, "(END)\n");
 }
 
