@@ -1216,7 +1216,20 @@ _TOPMARK()
     PREINIT:
         PerlIO_printf(Perl_debug_log, "%s PREINIT TOPMARK=%d\n", __func__, (int) TOPMARK);
     CODE:
+        MY_debug_showstack(__func__);
         RETVAL = TOPMARK;
+
+    OUTPUT:
+        RETVAL
+
+I32
+_SHOW_STACK_NOARG()
+    PREINIT:
+        PerlIO_printf(Perl_debug_log, "%s PREINIT TOPMARK=%d\n", __func__, (int) TOPMARK);
+    CODE:
+        PerlIO_printf(Perl_debug_log, "CODE TOPMARK=%d\n", (int) TOPMARK);
+        MY_debug_showstack(__func__);
+        RETVAL = newSViv(0);
 
     OUTPUT:
         RETVAL
