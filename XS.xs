@@ -1170,6 +1170,11 @@ BOOT:
     MY_CXT.pxs_flush_cr = NULL;
 }
 
+void
+PRINT_TOPMARK()
+    CODE:
+        PerlIO_printf(Perl_debug_log, "PRINT TOPMARK=%d\n", (int) TOPMARK);
+
 # In some old thread-multi perls sv_dup_inc() wasn’t defined.
 
 #if defined(USE_ITHREADS) && defined(sv_dup_inc)
