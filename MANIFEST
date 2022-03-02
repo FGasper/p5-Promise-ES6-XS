@@ -8,9 +8,12 @@ XS.xs
 cpanfile
 easyxs/LICENSE
 easyxs/README.md
+easyxs/easyxs.h
+easyxs/easyxs_numeric.h
+easyxs/easyxs_perlcall.h
+easyxs/easyxs_string.h
 easyxs/init.h
 easyxs/ppport.h
-fg_std_xs.h
 lib/Promise/XS.pm
 lib/Promise/XS/Deferred.pm
 lib/Promise/XS/Promise.pm
@@ -22,6 +25,9 @@ t/assets/deferred_leak.pl
 t/assets/promise_leak.pl
 t/async_await.t
 t/async_await_hold_ref.t
+t/await_wait__anyevent.t
+t/await_wait__ioasync.t
+t/await_wait__mojo.t
 t/detect_memory_leaks.t
 t/finally.t
 t/infinite_recursion.t
