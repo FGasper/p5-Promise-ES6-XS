@@ -7,6 +7,10 @@ use Test::More;
 
 use Promise::XS;
 
+use FindBin;
+use lib "$FindBin::Bin/lib";
+use AwaitWait;
+
 use Test::FailWarnings -allow_deps => 1;
 
 my $failed_why;
@@ -17,16 +21,17 @@ BEGIN {
 
 plan skip_all => "Can’t run test: $failed_why" if $failed_why;
 
+AwaitWait::skip_if_bad_topmark();
+
 Promise::XS::use_event('Mojo::IOLoop');
 
-my $d = Promise::XS::deferred();
-
-Mojo::IOLoop->timer(
-    0.1 => sub { $d->resolve(42, 34) },
+AwaitWait::test_success(
+    sub {
+        my $d = shift;
+        Mojo::IOLoop->timer(
+            0.1 => sub { $d->resolve(42, 34) },
+        );
+    },
 );
-
-my @got = $d->promise()->AWAIT_WAIT();
-
-is( "@got", "42 34", 'top-level await: success' );
 
 done_testing;

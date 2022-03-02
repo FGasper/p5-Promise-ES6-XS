@@ -9,6 +9,10 @@ use Promise::XS;
 
 use Test::FailWarnings -allow_deps => 1;
 
+use FindBin;
+use lib "$FindBin::Bin/lib";
+use AwaitWait;
+
 my $failed_why;
 
 BEGIN {
@@ -17,17 +21,17 @@ BEGIN {
 
 plan skip_all => "Can’t run test: $failed_why" if $failed_why;
 
+AwaitWait::skip_if_bad_topmark();
+
 my $loop = IO::Async::Loop->new();
 
 Promise::XS::use_event('IO::Async', $loop);
 
-my $d = Promise::XS::deferred();
-
-$loop->later( sub { $d->resolve(42, 34) } );
-
-my @got = $d->promise()->AWAIT_WAIT();
-
-is( "@got", "42 34", 'top-level await: success' );
+AwaitWait::test_success(
+    sub {
+        my $d = shift;
+        $loop->later( sub { $d->resolve(42, 34) } );
+    },
+);
 
 done_testing;
-

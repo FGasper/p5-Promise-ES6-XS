@@ -1,5 +1,4 @@
 #include "easyxs/easyxs.h"
-//#include "fg.debug.c.inc"
 
 #include <stdbool.h>
 #include <unistd.h>
@@ -1149,8 +1148,6 @@ MODULE = Promise::XS     PACKAGE = Promise::XS
 
 BOOT:
 {
-    PerlIO_printf(Perl_debug_log, "PXS BOOT TOPMARK=%d\n", (int) TOPMARK);
-
     MY_CXT_INIT;
 #ifdef USE_ITHREADS
     MY_CXT.owner = aTHX;
@@ -1172,10 +1169,14 @@ BOOT:
     MY_CXT.pxs_flush_cr = NULL;
 }
 
-void
-PRINT_TOPMARK()
+# debugging only
+I32
+_TOPMARK()
     CODE:
-        PerlIO_printf(Perl_debug_log, "PRINT TOPMARK=%d\n", (int) TOPMARK);
+        RETVAL = TOPMARK;
+
+    OUTPUT:
+        RETVAL
 
 # In some old thread-multi perls sv_dup_inc() wasn’t defined.
 
@@ -1260,7 +1261,6 @@ MODULE = Promise::XS     PACKAGE = Promise::XS::Deferred
 PROTOTYPES: DISABLE
 
 BOOT:
-    PerlIO_printf(Perl_debug_log, "PXSD BOOT TOPMARK=%d\n", (int) TOPMARK);
     newCONSTSUB( gv_stashpvs(BASE_CLASS "::Deferred", FALSE), "_DEFER_ANYEVENT", newSVuv(_DEFER_ANYEVENT));
     newCONSTSUB( gv_stashpvs(BASE_CLASS "::Deferred", FALSE), "_DEFER_IOASYNC", newSVuv(_DEFER_IOASYNC));
     newCONSTSUB( gv_stashpvs(BASE_CLASS "::Deferred", FALSE), "_DEFER_MOJO", newSVuv(_DEFER_MOJO));
@@ -1527,14 +1527,12 @@ AWAIT_IS_READY(SV *self_sv)
 void
 AWAIT_GET(SV *self_sv)
     PPCODE:
-  PerlIO_printf(Perl_debug_log, "AWAIT_GET, TOPMARK=%d\n", (int) TOPMARK);
         DEFERRED_CLASS_TYPE* self = _get_deferred_from_sv(aTHX_ self_sv);
 
         assert(self->promise->state == XSPR_STATE_FINISHED);
 
         SV** results = self->promise->finished.result->results;
         int result_count = self->promise->finished.result->count;
-    fprintf(stderr, "in AWAIT_GET: result count=%d\n", result_count);
 
         if (RESULT_IS_RESOLVED(self->promise->finished.result)) {
             int i;
@@ -1626,6 +1624,4 @@ AWAIT_WAIT(SV* self_sv)
         }
 
         int count = call_method("AWAIT_GET", GIMME_V);
-    fprintf(stderr, "AWAIT_GET count=%d\n", count);
-        easyxs_debug_showstack("after AWAIT_GET");
         XSRETURN(count);
