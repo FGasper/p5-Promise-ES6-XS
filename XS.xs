@@ -1294,15 +1294,11 @@ ___set_deferral_generic(SV* deferral_cr, SV* deferral_arg, UV event_system, SV* 
 
         MY_CXT.deferral_cr = SvREFCNT_inc(deferral_cr);
 
-        if (deferral_arg && SvOK(deferral_arg)) {
-            MY_CXT.deferral_arg = SvREFCNT_inc(deferral_arg);
-        }
+        MY_CXT.deferral_arg = SvOK(deferral_arg) ? SvREFCNT_inc(deferral_arg) : NULL;
 
         MY_CXT.event_system = event_system;
 
-        if (stop_cr) {
-            MY_CXT.stop_cr = SvREFCNT_inc(stop_cr);
-        }
+        MY_CXT.stop_cr = stop_cr ? SvREFCNT_inc(stop_cr) : NULL;
 
 # We don’t care if there are args or not.
 void
