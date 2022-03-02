@@ -23,9 +23,9 @@ BEGIN {
     eval 'use AnyEvent; 1' or $failed_why = $@;
 }
 
-#plan skip_all => "Can’t run test: $failed_why" if $failed_why;
-#
-#AwaitWait::skip_if_bad_topmark();
+plan skip_all => "Can’t run test: $failed_why" if $failed_why;
+
+AwaitWait::skip_if_bad_topmark();
 #
 #Promise::XS::use_event('AnyEvent');
 #
