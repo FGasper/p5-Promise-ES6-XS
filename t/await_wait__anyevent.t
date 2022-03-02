@@ -29,6 +29,8 @@ diag "topmark bad? " . _topmark_is_bad();
 
 Promise::XS::use_event('AnyEvent');
 
+diag "topmark bad? " . _topmark_is_bad();
+
 AwaitWait::test_success(
     sub {
         my $d = shift;
