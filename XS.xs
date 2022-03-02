@@ -1142,57 +1142,6 @@ static void _mojo_wait_promise(pTHX_ SV* promise_sv, SV* stop_cr) {
     );
 }
 
-#ifdef CX_CUR
-
-#define MY_debug_showstack(pattern, ...)  MY_S_debug_showstack(aTHX_ pattern, ##__VA_ARGS__)
-
-static inline void MY_S_debug_showstack(pTHX_ const char *pattern, ...)
-{
-  SV **sp;
-  PerlIO_printf(Perl_debug_log, "INIT TOPMARK=%d\n", (int) TOPMARK);
-
-  va_list ap;
-  va_start(ap, pattern);
-
-  if (!pattern) pattern = "Stack";
-
-  PerlIO_vprintf(Perl_debug_log, pattern, ap);
-  PerlIO_printf(Perl_debug_log, "\n");
-  va_end(ap);
-
-  PERL_CONTEXT *cx = CX_CUR();
-
-  I32 floor = cx->blk_oldsp;
-  I32 *mark = PL_markstack + cx->blk_oldmarksp + 1;
-
-  PerlIO_printf(Perl_debug_log, "  TOPMARK=%d, floor = %d\n", (int) TOPMARK, (int) floor);
-  PerlIO_printf(Perl_debug_log, "  marks (TOPMARK=@%" IVdf "):\n", (IV) (TOPMARK - floor));
-  for(; mark <= PL_markstack_ptr; mark++)
-    PerlIO_printf(Perl_debug_log,  "    @%" IVdf "\n", (IV) (*mark - floor));
-
-  mark = PL_markstack + cx->blk_oldmarksp + 1;
-  for(sp = PL_stack_base + floor + 1; sp <= PL_stack_sp; sp++) {
-    PerlIO_printf(Perl_debug_log, sp == PL_stack_sp ? "-> " : "   ");
-    PerlIO_printf(Perl_debug_log, "%p = ", *sp);
-    S_debug_sv_summary(aTHX_ *sp);
-    while(mark <= PL_markstack_ptr && PL_stack_base + *mark == sp)
-      PerlIO_printf(Perl_debug_log, " [*M]"), mark++;
-    PerlIO_printf(Perl_debug_log, "\n");
-  }
-}
-
-#endif
-
-void static inline _MY_print_mark_stack(pTHX) {
-    PerlIO_printf(Perl_debug_log, "MARK STACK (start=%p; cur=%p, offset=%d):\n", PL_markstack, PL_markstack_ptr, (int) (PL_markstack_ptr - PL_markstack));
-    I32 *mp = PL_markstack;
-    while (mp != PL_markstack_max) {
-        const char* pattern = (mp == PL_markstack_ptr ? "[%d]" : "%d");
-        PerlIO_printf(Perl_debug_log, pattern, *mp++);
-        PerlIO_printf(Perl_debug_log, (mp == PL_markstack_max) ? "\n" : ",");
-    }
-}
-
 //----------------------------------------------------------------------
 
 MODULE = Promise::XS     PACKAGE = Promise::XS
@@ -1219,39 +1168,6 @@ BOOT:
     MY_CXT.stop_cr = NULL;
     MY_CXT.pxs_flush_cr = NULL;
 }
-
-# debugging only
-I32
-_TOPMARK()
-    PREINIT:
-        PerlIO_printf(Perl_debug_log, "%s\n", __func__);
-        _MY_print_mark_stack(aTHX);
-    CODE:
-        MY_debug_showstack(__func__);
-        RETVAL = TOPMARK;
-
-    OUTPUT:
-        RETVAL
-
-I32
-_SHOW_STACK_NOARG()
-    PREINIT:
-        PerlIO_printf(Perl_debug_log, "%s\n", __func__);
-        _MY_print_mark_stack(aTHX);
-    CODE:
-        PerlIO_printf(Perl_debug_log, "CODE TOPMARK=%d\n", (int) TOPMARK);
-        MY_debug_showstack(__func__);
-        RETVAL = newSViv(0);
-
-    OUTPUT:
-        RETVAL
-
-void
-_SHOW_STACK(const char* msg=__func__)
-    CODE:
-        PerlIO_printf(Perl_debug_log, "showing stack (%s)\n", msg);
-        _MY_print_mark_stack(aTHX);
-        exs_debug_showstack(msg);
 
 # In some old thread-multi perls sv_dup_inc() wasn’t defined.
 

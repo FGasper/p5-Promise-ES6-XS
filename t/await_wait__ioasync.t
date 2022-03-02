@@ -21,8 +21,6 @@ BEGIN {
 
 plan skip_all => "Can’t run test: $failed_why" if $failed_why;
 
-AwaitWait::skip_if_bad_topmark();
-
 my $loop = IO::Async::Loop->new();
 
 Promise::XS::use_event('IO::Async', $loop);

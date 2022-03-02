@@ -21,8 +21,6 @@ BEGIN {
 
 plan skip_all => "Can’t run test: $failed_why" if $failed_why;
 
-AwaitWait::skip_if_bad_topmark();
-
 Promise::XS::use_event('Mojo::IOLoop');
 
 AwaitWait::test_success(
