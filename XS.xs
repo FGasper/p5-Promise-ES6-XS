@@ -1525,7 +1525,7 @@ AWAIT_GET(SV *self_sv)
 
         SV** results = self->promise->finished.result->results;
         int result_count = self->promise->finished.result->count;
-    fprintf(stder, "in AWAIT_GET: result count=%d\n", result_count);
+    fprintf(stderr, "in AWAIT_GET: result count=%d\n", result_count);
 
         if (RESULT_IS_RESOLVED(self->promise->finished.result)) {
             int i;
@@ -1618,4 +1618,5 @@ AWAIT_WAIT(SV* self_sv)
 
         int count = call_method("AWAIT_GET", GIMME_V);
     fprintf(stderr, "AWAIT_GET count=%d\n", count);
+        easyxs_debug_showstack("after AWAIT_GET");
         XSRETURN(count);
