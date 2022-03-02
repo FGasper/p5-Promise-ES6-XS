@@ -1149,6 +1149,8 @@ MODULE = Promise::XS     PACKAGE = Promise::XS
 
 BOOT:
 {
+    PerlIO_printf(Perl_debug_log, "PXS BOOT TOPMARK=%d\n", (int) TOPMARK);
+
     MY_CXT_INIT;
 #ifdef USE_ITHREADS
     MY_CXT.owner = aTHX;
@@ -1258,6 +1260,7 @@ MODULE = Promise::XS     PACKAGE = Promise::XS::Deferred
 PROTOTYPES: DISABLE
 
 BOOT:
+    PerlIO_printf(Perl_debug_log, "PXSD BOOT TOPMARK=%d\n", (int) TOPMARK);
     newCONSTSUB( gv_stashpvs(BASE_CLASS "::Deferred", FALSE), "_DEFER_ANYEVENT", newSVuv(_DEFER_ANYEVENT));
     newCONSTSUB( gv_stashpvs(BASE_CLASS "::Deferred", FALSE), "_DEFER_IOASYNC", newSVuv(_DEFER_IOASYNC));
     newCONSTSUB( gv_stashpvs(BASE_CLASS "::Deferred", FALSE), "_DEFER_MOJO", newSVuv(_DEFER_MOJO));
