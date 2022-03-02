@@ -1519,6 +1519,7 @@ AWAIT_IS_READY(SV *self_sv)
 void
 AWAIT_GET(SV *self_sv)
     PPCODE:
+  PerlIO_printf(Perl_debug_log, "AWAIT_GET, TOPMARK=%d\n", (int) TOPMARK);
         DEFERRED_CLASS_TYPE* self = _get_deferred_from_sv(aTHX_ self_sv);
 
         assert(self->promise->state == XSPR_STATE_FINISHED);
