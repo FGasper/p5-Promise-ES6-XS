@@ -45,7 +45,7 @@ jobs:
       - name: perl -V
         run: perl -V
       - name: Install Dependencies
-        run: cpanm --notest --installdeps --with-configure --with-develop .
+        run: cpanm --notest --installdeps --with-configure --with-develop --verbose .
       - name: perl Makefile.PL
         run: perl Makefile.PL
       - name: make
