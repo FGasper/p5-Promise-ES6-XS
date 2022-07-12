@@ -39,7 +39,7 @@ jobs:
       image: perldocker/perl-tester:${{ matrix.perl-version }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@main
         with:
             submodules: recursive
       - name: perl -V
@@ -57,7 +57,7 @@ jobs:
     runs-on: macOS-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@main
         with:
             submodules: recursive
       - name: Set up Perl
@@ -81,7 +81,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@main
         with:
             submodules: recursive
       - name: Set up Perl
@@ -107,11 +107,11 @@ jobs:
 
     steps:
       - name: Set up Cygwin
-        uses: egor-tensin/setup-cygwin@v3
+        uses: egor-tensin/setup-cygwin@master
         with:
             platform: x64
             packages: perl_base perl-ExtUtils-MakeMaker make gcc-g++ libcrypt-devel libnsl-devel bash
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@main
         with:
             submodules: recursive
       - run: perl -V
