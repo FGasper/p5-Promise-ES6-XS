@@ -1044,6 +1044,10 @@ static inline SV* _create_prerejected_promise(pTHX_ SV** args, I32 argslen, bool
 }
 
 //----------------------------------------------------------------------
+static SV* _get_nothing_cr_arg (pTHX) {
+    return SvREFCNT_inc( get_sv("Promise::XS::Deferred::_NOTHING_CR", 0) );
+}
+
 static void _anyevent_wait_promise (pTHX_ SV* promise_sv) {
     SV* condvar = exs_call_method_scalar(
         sv_2mortal( newSVpvs("AnyEvent") ),
@@ -1052,7 +1056,7 @@ static void _anyevent_wait_promise (pTHX_ SV* promise_sv) {
     );
 
     SV* catch_args[] = {
-        get_sv("Promise::XS::Deferred::_NOTHING_CR", 0),
+        _get_nothing_cr_arg(aTHX),
         NULL,
     };
 
@@ -1086,7 +1090,7 @@ static void _anyevent_wait_promise (pTHX_ SV* promise_sv) {
 
 static void _ioasync_wait_promise (pTHX_ SV* promise_sv, SV* loop_sv, SV* stop_cr) {
     SV* catch_args[] = {
-        get_sv("Promise::XS::Deferred::_NOTHING_CR", 0),
+        _get_nothing_cr_arg(aTHX),
         NULL,
     };
 
@@ -1115,7 +1119,7 @@ static void _ioasync_wait_promise (pTHX_ SV* promise_sv, SV* loop_sv, SV* stop_c
 
 static void _mojo_wait_promise(pTHX_ SV* promise_sv, SV* stop_cr) {
     SV* catch_args[] = {
-        get_sv("Promise::XS::Deferred::_NOTHING_CR", 0),
+        _get_nothing_cr_arg(aTHX),
         NULL,
     };
 
