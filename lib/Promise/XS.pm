@@ -264,7 +264,8 @@ sub use_event {
         $cr->(@args);
     }
     else {
-        die( __PACKAGE__ . ": unknown event engine: $name" );
+        my @known = sort keys %{ DEFERRAL_CR() };
+        die( __PACKAGE__ . ": unknown event engine: $name (must be one of: @known)" );
     }
 }
 
