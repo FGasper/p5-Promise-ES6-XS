@@ -19,7 +19,7 @@ BEGIN {
 plan skip_all => "Can’t run test: $failed_why" if $failed_why;
 
 require Future::AsyncAwait;
-diag "Future::AsyncAwait $Future::AsyncAwait::VERSION";
+note "Future::AsyncAwait $Future::AsyncAwait::VERSION";
 
 Test::Future::AsyncAwait::Awaitable::test_awaitable(
     'Conforms to Awaitable API',
