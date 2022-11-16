@@ -6,7 +6,7 @@ use warnings;
 our $VERSION;
 
 BEGIN {
-    $VERSION = '0.17';
+    $VERSION = '0.17_90';
 }
 
 =encoding utf-8
@@ -32,7 +32,8 @@ The following aggregator functions are exposed:
 
     # Resolves with a list of arrayrefs, one per promise.
     # Rejects with the results from the first rejected promise.
-    my $all_p = Promise::XS::all( $promise1, $promise2, .. );
+    # Non-promises will be passed through as resolve values.
+    my $all_p = Promise::XS::all( $promise1, $promise2, 'abc' .. );
 
     # Resolves/rejects with the results from the first
     # resolved or rejected promise.

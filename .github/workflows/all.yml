@@ -21,6 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         perl-version:
+          - '5.36'
           - '5.34'
           - '5.32'
           - '5.30'
@@ -61,11 +62,11 @@ jobs:
         with:
             submodules: recursive
       - name: Set up Perl
-        run: brew install perl
+        run: brew install cpanminus
       - name: perl -V
         run: perl -V
       - name: Install Dependencies
-        run: curl -L https://cpanmin.us | perl - --notest --installdeps --with-develop --with-configure .
+        run: cpanm --verbose --notest --installdeps --with-develop --with-configure .
       - name: perl Makefile.PL
         run: perl Makefile.PL
       - name: make
@@ -94,7 +95,7 @@ jobs:
       - name: perl -V
         run: perl -V
       - name: Install Dependencies
-        run: curl -L https://cpanmin.us | perl - --notest --installdeps --with-develop --with-configure .
+        run: curl -L https://cpanmin.us | perl - --notest --installdeps --with-develop --with-configure --verbose .
       - name: perl Makefile.PL
         run: perl Makefile.PL
       - name: make
