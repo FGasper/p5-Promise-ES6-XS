@@ -26,7 +26,7 @@
 
 #define UNUSED(x) (void)(x)
 
-#define DEBUG_AWAITABLE 1
+#define DEBUG_AWAITABLE 0
 #if DEBUG_AWAITABLE
 #   define _DO_DEBUG_AWAITABLE() fprintf(stderr, "# %s\n", __func__)
 #else
