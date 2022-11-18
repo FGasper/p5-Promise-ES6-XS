@@ -64,6 +64,7 @@ jobs:
       - uses: actions/checkout@main
         with:
             submodules: recursive
+      - run: apt update && apt install -y curl
       - name: perl -V
         run: perl -V
       - name: Install Dependencies
