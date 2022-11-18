@@ -3,6 +3,7 @@ Revision history for Perl extension Promise::XS:
 0.18
 - all() now accepts non-promise values (as Promises.pm does)
   Thank you, @AnaTofuZ!
+- Fix t/async_await__several_awaits.t’s Mojo test.
 
 0.17 Mon 15 Aug 2022
 - Support Future::AsyncAwait’s top-level await.
