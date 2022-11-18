@@ -6,7 +6,7 @@ use warnings;
 our $VERSION;
 
 BEGIN {
-    $VERSION = '0.17_92';
+    $VERSION = '0.18';
 }
 
 =encoding utf-8
@@ -148,7 +148,7 @@ C<$new> is rejected with the relevant value(s).
 
 =back
 
-=head1 B<EXPERIMENTAL:> ASYNC/AWAIT SUPPORT
+=head1 ASYNC/AWAIT SUPPORT
 
 This module is L<Promise::AsyncAwait>-compatible.
 Once you load that module you can do nifty stuff like:
@@ -170,6 +170,10 @@ Once you load that module you can do nifty stuff like:
     do_stuff->then( sub {
         $one_plus_number = shift;
     } );
+
+B<NOTE:> As of this writing, DEBUGGING-enabled perls trigger assertion
+failures in L<Future::AsyncAwait> (which underlies L<Promise::AsyncAwait>).
+If you’re not sure what that means, you probably don’t need to worry. :)
 
 =head1 EVENT LOOPS
 

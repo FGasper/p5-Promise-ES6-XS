@@ -122,7 +122,7 @@ Given the following …
 - If `$callback` throws, or if it returns a single, rejected promise,
 `$new` is rejected with the relevant value(s).
 
-# **EXPERIMENTAL:** ASYNC/AWAIT SUPPORT
+# ASYNC/AWAIT SUPPORT
 
 This module is [Promise::AsyncAwait](https://metacpan.org/pod/Promise%3A%3AAsyncAwait)-compatible.
 Once you load that module you can do nifty stuff like:
@@ -144,6 +144,10 @@ Once you load that module you can do nifty stuff like:
     do_stuff->then( sub {
         $one_plus_number = shift;
     } );
+
+**NOTE:** As of this writing, DEBUGGING-enabled perls trigger assertion
+failures in [Future::AsyncAwait](https://metacpan.org/pod/Future%3A%3AAsyncAwait) (which underlies [Promise::AsyncAwait](https://metacpan.org/pod/Promise%3A%3AAsyncAwait)).
+If you’re not sure what that means, you probably don’t need to worry. :)
 
 # EVENT LOOPS
 
