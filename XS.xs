@@ -1505,6 +1505,12 @@ AWAIT_CLONE(...)
         RETVAL = _promise_to_sv(aTHX_ promise_p);
 
         _IMMORTALIZE_PROMISE_SV(RETVAL, promise_p);
+
+        if (DEBUG_AWAITABLE) {
+            fprintf(stderr, "#   SvREFCNT(RETVAL)=%d\n", SvREFCNT(RETVAL));
+            fprintf(stderr, "#   SvREFCNT(SvRV(RETVAL))=%d\n", SvREFCNT(SvRV(RETVAL)));
+            sv_dump(RETVAL);
+        }
     OUTPUT:
         RETVAL
 
