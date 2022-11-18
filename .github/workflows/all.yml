@@ -131,3 +131,25 @@ jobs:
       - name: make test
         run: cd $GITHUB_WORKSPACE; make test
         shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+
+  qemu-alpine:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - i386
+          - arm32v6
+          - arm32v7
+          - arm64v8
+          - s390x
+
+    steps:
+      - uses: actions/checkout@main
+        with:
+            submodules: recursive
+      - name: Get the qemu container
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      - name: Run tests on ${{ matrix.platform }}
+        run: docker run --rm --interactive --mount type=bind,source=$(pwd),target=/host ${{ matrix.platform }}/alpine sh -c "apk add wget perl-app-cpanminus perl-dev make gcc libc-dev; cd /host; perl -V; cpanm --verbose --notest --installdeps --with-configure --with-develop .; perl Makefile.PL; make -j3 -j3; PERL_DL_NONLAZY=1 prove -wlvmb t"
