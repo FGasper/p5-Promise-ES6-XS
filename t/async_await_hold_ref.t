@@ -7,7 +7,8 @@ use Test::More;
 use Test::FailWarnings -allow_deps => 1;
 
 use Config;
-if ($Config{'config_args'} =~ m<DEBUGGING>) {
+
+if ($Config{'ccargs'} && $Config{'ccargs'} =~ m<DEBUGGING>) {
     plan skip_all => 'DEBUGGING perls confuse Future::AsyncAwait (as of 0.59, at least).';
 }
 
