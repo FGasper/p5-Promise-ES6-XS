@@ -1,5 +1,9 @@
 #include "easyxs/easyxs.h"
 
+#ifndef ASSUME
+#define ASSUME assert
+#endif
+
 #include <stdbool.h>
 #include <unistd.h>
 
