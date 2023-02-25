@@ -659,8 +659,8 @@ void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
     }
 
     if (promise->self_sv_ref != NULL) {
-        SvREFCNT_dec(promise->self_sv_ref);
         SvREFCNT_dec(SvRV(promise->self_sv_ref));
+        SvREFCNT_dec(promise->self_sv_ref);
         promise->self_sv_ref = NULL;
     }
 
