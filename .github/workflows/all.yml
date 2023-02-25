@@ -14,6 +14,27 @@ env:
    PERL_CARTON_PATH: $GITHUB_WORKSPACE/local
 
 jobs:
+  linux-devel:
+    runs-on: ubuntu-latest
+
+    container:
+      image: perl:devel
+
+    steps:
+      - uses: actions/checkout@main
+        with:
+            submodules: recursive
+      - name: perl -V
+        run: perl -V
+      - name: Install Dependencies
+        run: cpanm --notest --installdeps --with-configure --with-develop --verbose .
+      - name: perl Makefile.PL
+        run: perl Makefile.PL
+      - name: make
+        run: make
+      - name: Run Tests
+        run: make test
+
   linux:
     runs-on: ubuntu-latest
 
