@@ -743,10 +743,12 @@ xspr_promise_t* xspr_promise_new(pTHX)
 {
     xspr_promise_t* promise;
     Newxz(promise, 1, xspr_promise_t);
-    promise->refs = 1;
-    promise->state = XSPR_STATE_PENDING;
-    promise->on_ready_immediate = NULL;
-    promise->self_sv_ref = NULL;
+
+    *promise = (xspr_promise_t) {
+        .refs = 1,
+        .state = XSPR_STATE_PENDING,
+    };
+
     return promise;
 }
 
