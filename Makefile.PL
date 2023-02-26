@@ -3,7 +3,7 @@ use warnings;
 
 use Config;
 
-my $ASAN = 0;
+my $ASAN = $ENV{'PROMISE_XS_ASAN'};
 
 my $lddlflags = $Config{'lddlflags'};
 
