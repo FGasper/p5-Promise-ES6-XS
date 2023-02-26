@@ -612,8 +612,8 @@ void xspr_immediate_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* pro
 }
 
 #define _XSPR_FREE_ON_READY_IMMEDIATE(promise) \
-    SvREFCNT_dec(promise->on_ready_immediate); \
-    SvREFCNT_dec(SvRV(promise->on_ready_immediate));
+    SvREFCNT_dec(SvRV(promise->on_ready_immediate)); \
+    SvREFCNT_dec(promise->on_ready_immediate);
 
 /* Transitions a promise from pending to finished, using the given result */
 void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
