@@ -612,6 +612,7 @@ void xspr_immediate_process(pTHX_ xspr_callback_t* callback, xspr_promise_t* pro
 }
 
 #define _XSPR_FREE_ON_READY_IMMEDIATE(promise) \
+    SvREFCNT_dec(SvRV(promise->on_ready_immediate)); \
     SvREFCNT_dec(promise->on_ready_immediate);
 
 /* Transitions a promise from pending to finished, using the given result */
@@ -658,6 +659,7 @@ void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
     }
 
     if (promise->self_sv_ref != NULL) {
+        SvREFCNT_dec(SvRV(promise->self_sv_ref));
         SvREFCNT_dec(promise->self_sv_ref);
         promise->self_sv_ref = NULL;
     }
@@ -1021,6 +1023,7 @@ SV* _promise_to_sv(pTHX_ xspr_promise_t* promise_p) {
         /* fprintf(stderr, "making immortal: sv=%p p=%p\n", promise_sv, promise_p); */ \
         promise_p->self_sv_ref = promise_sv; \
         SvREFCNT_inc(promise_sv); \
+        SvREFCNT_inc(SvRV(promise_sv)); \
     } while (0)
 
 static inline SV* _create_preresolved_promise(pTHX_ SV** args, I32 argslen, bool immortalize) {
@@ -1615,6 +1618,7 @@ AWAIT_ON_READY(SV *self_sv, SV* coderef)
 
         self->promise->on_ready_immediate = coderef;
         SvREFCNT_inc(coderef);
+        SvREFCNT_inc(SvRV(coderef));
 
 void
 AWAIT_WAIT(SV* self_sv)
