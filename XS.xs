@@ -659,7 +659,17 @@ void xspr_promise_finish(pTHX_ xspr_promise_t* promise, xspr_result_t* result)
     }
 
     if (promise->self_sv_ref != NULL) {
-        SvREFCNT_dec(SvRV(promise->self_sv_ref));
+
+        // After we set self_sv_ref, Future::AsyncAwait manipulates
+        // things a bit such that WEAKREF is set on the reference and
+        // the referent’s refcount is decremented. Thus, we can forgo
+        // the reference-count decrement here. We still check for the
+        // WEAKREF flag, though, just in case something changed.
+        //
+        if (!SvWEAKREF(promise->self_sv_ref)) {
+            SvREFCNT_dec(SvRV(promise->self_sv_ref));
+        }
+
         SvREFCNT_dec(promise->self_sv_ref);
         promise->self_sv_ref = NULL;
     }
