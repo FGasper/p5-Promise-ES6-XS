@@ -188,3 +188,42 @@ jobs:
         run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
       - name: Run tests on ${{ matrix.platform }}
         run: docker run --rm --interactive --mount type=bind,source=$(pwd),target=/host ${{ matrix.platform }}/alpine sh -c "apk add wget perl-app-cpanminus perl-dev make gcc libc-dev; cd /host; perl -V; cpanm --verbose --notest --installdeps --with-configure --with-develop .; perl Makefile.PL; make -j3 -j3; PERL_DL_NONLAZY=1 prove -wlvmb t"
+
+  BSDs:
+    runs-on: macos-10.15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: freebsd
+            version: '13.1'
+            pkginstall: pkg install -y git cmake p5-ExtUtils-MakeMaker
+        # Breaking due to some weird linker error ...
+        #  - name: freebsd
+        #    version: '12.2'
+        #    pkginstall: pkg install -y git cmake p5-ExtUtils-MakeMaker
+          - name: openbsd
+            version: '7.2'
+            pkginstall: pkg_add git cmake curl p5-ExtUtils-MakeMaker
+          - name: openbsd
+            version: '6.9'
+            pkginstall: pkg_add git cmake curl p5-ExtUtils-MakeMaker
+
+    steps:
+      - uses: actions/checkout@main
+        with:
+          submodules: recursive
+
+      - name: Test on ${{ matrix.os.name }}
+        uses: cross-platform-actions/action@master
+        with:
+          operating_system: ${{ matrix.os.name }}
+          version: ${{ matrix.os.version }}
+          shell: bash
+          run: |
+            sudo ${{ matrix.os.pkginstall }}
+            curl -L https://cpanmin.us | sudo perl - --verbose --notest --installdeps --with-configure --with-develop .
+            perl Makefile.PL
+            make
+            prove -wlvmb t
