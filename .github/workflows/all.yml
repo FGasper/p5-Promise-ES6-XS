@@ -198,17 +198,17 @@ jobs:
         os:
           - name: freebsd
             version: '13.1'
-            pkginstall: pkg install -y git cmake p5-ExtUtils-MakeMaker
+            pkginstall: pkg install -y git p5-ExtUtils-MakeMaker
         # Breaking due to some weird linker error ...
         #  - name: freebsd
         #    version: '12.2'
         #    pkginstall: pkg install -y git cmake p5-ExtUtils-MakeMaker
           - name: openbsd
             version: '7.2'
-            pkginstall: pkg_add git cmake curl p5-ExtUtils-MakeMaker
+            pkginstall: pkg_add git curl p5-ExtUtils-MakeMaker
           - name: openbsd
             version: '6.9'
-            pkginstall: pkg_add git cmake curl p5-ExtUtils-MakeMaker
+            pkginstall: pkg_add git curl p5-ExtUtils-MakeMaker
 
     steps:
       - uses: actions/checkout@main
