@@ -1,7 +1,6 @@
 #include "easyxs/easyxs.h"
 
 #include <stdbool.h>
-#include <unistd.h>
 
 #define MY_CXT_KEY "Promise::XS::_guts" XS_VERSION
 
